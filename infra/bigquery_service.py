@@ -1,83 +1,99 @@
+"""BigQuery Service - Streamlit Cloud 対応版"""
 from __future__ import annotations
 import logging
-from domain.models import CloudDataResult, SQLResult
-from domain.sql_validator import validate_sql, SQLValidationError
-from config.app_config import APP
+import re
+from dataclasses import dataclass
+from typing import Any
+
+import streamlit as st
+from google.cloud import bigquery
+
+from infra.gcp_auth import get_credentials
 
 logger = logging.getLogger(__name__)
 
 
-def classify_cloud_error(exc: Exception) -> tuple[str, str]:
-    s = str(exc).lower()
-    if any(k in s for k in ("credentials", "permission", "forbidden", "403", "401")):
-        return "auth", str(exc)[:APP.error_msg_limit]
-    if any(k in s for k in ("not found", "404", "does not exist")):
-        return "not_found", str(exc)[:APP.error_msg_limit]
-    if any(k in s for k in ("timeout", "connection", "dns", "network")):
-        return "network", str(exc)[:APP.error_msg_limit]
-    return "config", str(exc)[:APP.error_msg_limit]
+SQL_DISALLOWED_KEYWORDS = [
+    "INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER",
+    "TRUNCATE", "MERGE", "GRANT", "REVOKE", "EXECUTE", "CALL", "EXEC",
+]
 
 
-def fetch_bq_schema(project_id: str, dataset_id: str) -> CloudDataResult:
-    full = project_id + "." + dataset_id
-    try:
-        from google.cloud import bigquery
+class SQLValidationError(Exception):
+    pass
+
+
+@dataclass(frozen=True)
+class SQLResult:
+    columns: list[str]
+    data: list[list[Any]]
+    row_count: int
+
+    def to_dataframe(self):
         import pandas as pd
-        client = bigquery.Client(project=project_id)
-        info_sql = (
-            "SELECT table_name, column_name, data_type, description"
-            " FROM `" + project_id + "." + dataset_id + ".INFORMATION_SCHEMA.COLUMN_FIELD_PATHS`"
-            " ORDER BY table_name, ordinal_position"
-        )
+        return pd.DataFrame(self.data, columns=self.columns)
+
+
+def validate_sql(sql: str) -> None:
+    sql_upper = sql.upper().strip()
+    if not sql_upper.startswith(("SELECT", "WITH")):
+        raise SQLValidationError("SQL must start with SELECT or WITH")
+    if ";" in sql:
+        raise SQLValidationError("Multiple statements not allowed")
+    for kw in SQL_DISALLOWED_KEYWORDS:
+        pattern = rf"\b{kw}\b"
+        if re.search(pattern, sql_upper):
+            raise SQLValidationError(f"Disallowed keyword: {kw}")
+
+
+class BigQueryService:
+    def __init__(self, project_id: str):
+        self.project_id = project_id
+        self._client: bigquery.Client | None = None
+
+    def _get_client(self) -> bigquery.Client:
+        if self._client is None:
+            credentials = get_credentials()
+            self._client = bigquery.Client(
+                project=self.project_id,
+                credentials=credentials,
+            )
+        return self._client
+
+    @st.cache_data(ttl=300, show_spinner=False)
+    def fetch_schema(_self, project_id: str, dataset_filter: str | None = None) -> dict:
+        """BQスキーマを取得（キャッシュ付き）"""
         try:
-            df = client.query(info_sql).to_dataframe()
-        except Exception:
-            tables = list(client.list_tables(full))
-            if not tables:
-                return CloudDataResult(content="BigQuery: " + full + " (no tables)", is_connected=True)
-            rows = []
-            for t in tables:
-                tbl = client.get_table(project_id + "." + dataset_id + "." + t.table_id)
-                for fld in tbl.schema:
-                    rows.append({
-                        "table_name": t.table_id,
-                        "column_name": fld.name,
-                        "data_type": fld.field_type,
-                        "description": fld.description or "",
-                    })
-            df = pd.DataFrame(rows)
+            client = _self._get_client()
+            datasets = list(client.list_datasets())
+            schema = {}
+            for ds in datasets:
+                ds_id = ds.dataset_id
+                if dataset_filter and dataset_filter not in ds_id:
+                    continue
+                tables = list(client.list_tables(ds.reference))
+                schema[ds_id] = {}
+                for tbl in tables:
+                    full_table = client.get_table(tbl.reference)
+                    schema[ds_id][tbl.table_id] = [
+                        {"name": f.name, "type": f.field_type, "description": f.description or ""}
+                        for f in full_table.schema
+                    ]
+            return schema
+        except Exception as e:
+            logger.error(f"Failed to fetch schema: {e}")
+            raise
 
-        if df.empty:
-            return CloudDataResult(content="BigQuery: " + full + " (no tables)", is_connected=True)
-
-        lines = ["BigQuery Dataset: " + full]
-        for tname, grp in df.groupby("table_name", sort=True):
-            lines.append("  Table: " + str(tname))
-            for _, row in grp.iterrows():
-                desc = ": " + str(row["description"]) if row.get("description") else ""
-                lines.append("    - " + str(row["column_name"]) + " (" + str(row["data_type"]) + ")" + desc)
-        return CloudDataResult(content="\n".join(lines), is_connected=True)
-
-    except Exception as exc:
-        etype, edetail = classify_cloud_error(exc)
-        logger.error("BQ schema failed [%s]: %s", etype, edetail)
-        return CloudDataResult(content="", is_connected=False, error_type=etype, error_detail=edetail)
-
-
-def execute_bq_sql(project_id: str, sql: str) -> SQLResult | None:
-    try:
-        validated = validate_sql(sql)
-    except SQLValidationError as exc:
-        logger.warning("SQL rejected: %s", exc)
-        return None
-    try:
-        from google.cloud import bigquery
-        df = bigquery.Client(project=project_id).query(validated).to_dataframe()
-        return SQLResult(
-            columns=list(df.columns),
-            data=df.to_dict(orient="list"),
-            row_count=len(df),
-        )
-    except Exception as exc:
-        logger.warning("SQL execution failed: %s", exc)
-        return None
+    def execute_sql(self, sql: str, max_rows: int = 100) -> SQLResult:
+        """SQLを実行して結果を返す"""
+        validate_sql(sql)
+        try:
+            client = self._get_client()
+            query_job = client.query(sql)
+            results = query_job.result()
+            columns = [f.name for f in results.schema]
+            data = [list(row.values()) for row in results][:max_rows]
+            return SQLResult(columns=columns, data=data, row_count=len(data))
+        except Exception as e:
+            logger.error(f"SQL execution failed: {e}")
+            raise

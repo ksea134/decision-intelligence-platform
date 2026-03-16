@@ -1,44 +1,73 @@
+"""GCS Service - Streamlit Cloud 対応版"""
 from __future__ import annotations
 import logging
-from domain.models import CloudDataResult
-from config.app_config import APP
-from infra.bigquery_service import classify_cloud_error
+from dataclasses import dataclass
+
+import streamlit as st
+from google.cloud import storage
+
+from infra.gcp_auth import get_credentials
 
 logger = logging.getLogger(__name__)
 
 
-def fetch_gcs_documents(bucket: str, gcs_prefix: str) -> CloudDataResult:
-    """
-    Fetch text documents from GCS bucket.
-    Only .txt and .md files are fetched.
-    Files exceeding 5MB are skipped with a note.
-    No UI dependencies. Cache strategy is handled by the caller.
-    """
-    try:
-        from google.cloud import storage
-        client = storage.Client()
-        blobs = client.bucket(bucket).list_blobs(prefix=gcs_prefix)
+@dataclass(frozen=True)
+class CloudDataResult:
+    content: str
+    is_connected: bool
+    error_type: str | None = None
+    error_detail: str | None = None
 
-        parts: list[str] = []
-        skipped: list[str] = []
 
-        for blob in blobs:
-            if not blob.name.lower().endswith((".txt", ".md")):
-                continue
-            if blob.size and blob.size > APP.gcs_max_file_bytes:
-                skipped.append(blob.name + " (" + str(blob.size // 1024) + "KB - size limit exceeded)")
-                continue
-            rel = blob.name[len(gcs_prefix):]
-            text = blob.download_as_text()
-            parts.append("[GCS: " + rel + "]\n" + text)
+class GCSService:
+    def __init__(self, bucket_name: str):
+        self.bucket_name = bucket_name
+        self._client: storage.Client | None = None
 
-        content = "\n\n".join(parts) if parts else "(no GCS documents)"
-        if skipped:
-            content += "\n\n[Skipped files]\n" + "\n".join(skipped)
+    def _get_client(self) -> storage.Client:
+        if self._client is None:
+            credentials = get_credentials()
+            self._client = storage.Client(credentials=credentials)
+        return self._client
 
-        return CloudDataResult(content=content, is_connected=True)
-
-    except Exception as exc:
-        etype, edetail = classify_cloud_error(exc)
-        logger.error("GCS fetch failed [%s]: %s", etype, edetail)
-        return CloudDataResult(content="", is_connected=False, error_type=etype, error_detail=edetail)
+    @st.cache_data(ttl=300, show_spinner=False)
+    def fetch_documents(_self, bucket_name: str, prefix: str = "", max_size_mb: int = 5) -> CloudDataResult:
+        """GCSからドキュメントを取得（キャッシュ付き）"""
+        try:
+            client = _self._get_client()
+            bucket = client.bucket(bucket_name)
+            blobs = list(bucket.list_blobs(prefix=prefix))
+            
+            contents = []
+            for blob in blobs:
+                if blob.size > max_size_mb * 1024 * 1024:
+                    logger.warning(f"Skipping large file: {blob.name} ({blob.size} bytes)")
+                    continue
+                if blob.name.endswith(('.txt', '.md')):
+                    try:
+                        text = blob.download_as_text()
+                        contents.append(f"--- {blob.name} ---\n{text}")
+                    except Exception as e:
+                        logger.warning(f"Failed to download {blob.name}: {e}")
+            
+            combined = "\n\n".join(contents)
+            return CloudDataResult(content=combined, is_connected=True)
+        
+        except Exception as e:
+            error_str = str(e).lower()
+            if "403" in error_str or "permission" in error_str:
+                error_type = "auth"
+            elif "404" in error_str or "not found" in error_str:
+                error_type = "not_found"
+            elif "network" in error_str or "connection" in error_str:
+                error_type = "network"
+            else:
+                error_type = "config"
+            
+            logger.error(f"GCS fetch failed: {e}")
+            return CloudDataResult(
+                content="",
+                is_connected=False,
+                error_type=error_type,
+                error_detail=str(e),
+            )
