@@ -71,3 +71,20 @@ class GCSService:
                 error_type=error_type,
                 error_detail=str(e),
             )
+
+
+# 既存コードとの互換性のための関数インターフェース
+_default_service: GCSService | None = None
+
+
+def _get_service(bucket_name: str) -> GCSService:
+    global _default_service
+    if _default_service is None or _default_service.bucket_name != bucket_name:
+        _default_service = GCSService(bucket_name)
+    return _default_service
+
+
+def fetch_gcs_documents(bucket_name: str, prefix: str = "", max_size_mb: int = 5) -> CloudDataResult:
+    """GCSからドキュメントを取得"""
+    service = _get_service(bucket_name)
+    return service.fetch_documents(bucket_name, prefix, max_size_mb)

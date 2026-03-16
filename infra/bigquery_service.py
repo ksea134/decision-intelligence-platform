@@ -97,3 +97,26 @@ class BigQueryService:
         except Exception as e:
             logger.error(f"SQL execution failed: {e}")
             raise
+
+
+# 既存コードとの互換性のための関数インターフェース
+_default_service: BigQueryService | None = None
+
+
+def _get_service(project_id: str) -> BigQueryService:
+    global _default_service
+    if _default_service is None or _default_service.project_id != project_id:
+        _default_service = BigQueryService(project_id)
+    return _default_service
+
+
+def fetch_bq_schema(project_id: str, dataset_filter: str | None = None) -> dict:
+    """BQスキーマを取得"""
+    service = _get_service(project_id)
+    return service.fetch_schema(project_id, dataset_filter)
+
+
+def execute_bq_sql(project_id: str, sql: str, max_rows: int = 100) -> SQLResult:
+    """SQLを実行"""
+    service = _get_service(project_id)
+    return service.execute_sql(sql, max_rows)
