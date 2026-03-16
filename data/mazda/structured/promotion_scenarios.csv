@@ -1,0 +1,6 @@
+scenario_code,scenario_name,scenario_type,cashback_usd,apr_percent,bundle_value_usd,inventory_shift_units,logistics_cost_per_unit_usd,scenario_description
+SCN01,No intervention,maintain_price,0,6.8,0,0,0,現状維持。ブランド毀損なしだが在庫改善は限定的。
+SCN02,"Cashback $3,000",cashback,3000,6.8,0,0,0,短期販売増は見込めるが、残価低下と値引きブランド化リスクあり。
+SCN03,APR 0.9% for 72 months,apr_subsidy,0,0.9,0,0,0,月額支払額の心理的壁を下げつつMSRPを維持。
+SCN04,Maintenance pack bundle,value_add,0,6.8,1500,0,0,価格ではなく体験価値で訴求。
+SCN05,Inventory shift to California,inventory_shift,0,6.8,0,150,420,北カリフォルニアに150台移送。輸送コストは発生。

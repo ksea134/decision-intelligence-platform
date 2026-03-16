@@ -1,0 +1,4 @@
+user_id,role_name,access_level,allowed_regions,allowed_vehicle_codes,policy_scope
+u001,North America Sales Director,executive,US_SE_FL|US_SE_GA|US_W_CA|US_TX_TX,CX90PHEV|CX70PHEV|CX50|MAZDA3,full
+u002,Southeast Regional Manager,manager,US_SE_FL|US_SE_GA,CX90PHEV|CX70PHEV|CX50,regional
+u003,Florida Dealer Ops,operator,US_SE_FL,CX90PHEV|CX70PHEV|CX50,local

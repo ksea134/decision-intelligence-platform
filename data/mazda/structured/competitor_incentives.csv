@@ -1,0 +1,6 @@
+snapshot_date,region_code,competitor_brand,competitor_model,incentive_type,effective_incentive_usd,apr_percent,predicted_36m_residual_percent,market_share_percent
+2026-03-01,US_SE_FL,Toyota,Highlander PHEV,cashback,3000,6.49,71,37
+2026-03-01,US_SE_GA,Toyota,Highlander PHEV,cashback,3000,6.49,69,36
+2026-03-01,US_SE_FL,Honda,Pilot Hybrid,apr,1200,1.9,68,18
+2026-03-01,US_SE_GA,Honda,Pilot Hybrid,apr,1000,1.9,67,17
+2026-03-01,US_W_CA,Toyota,Highlander PHEV,cashback,1500,3.9,72,41

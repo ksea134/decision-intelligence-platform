@@ -1,0 +1,5 @@
+vehicle_code,vehicle_name,product_group,powertrain,segment,currency
+CX90PHEV,CX-90 PHEV,Large Product,PHEV,Premium Family SUV,USD
+CX70PHEV,CX-70 PHEV,Large Product,PHEV,Premium SUV,USD
+CX50,CX-50,Core Product,ICE,Crossover SUV,USD
+MAZDA3,MAZDA3,Core Product,ICE,Compact,USD

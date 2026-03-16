@@ -1,0 +1,8 @@
+# pyproject.toml — プロジェクト依存パッケージの定義ファイル
+# Pythonの「材料リスト」。必要なライブラリをここに記述する。
+[project]
+name = "decision-intelligence-platform"
+version = "0.1.0"
+requires-python = ">=3.11"
+
+[project.dependencies]

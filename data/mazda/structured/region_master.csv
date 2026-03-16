@@ -1,0 +1,5 @@
+region_code,macro_region,state,market_area,sales_division,language_code
+US_SE_FL,US Southeast,Florida,Miami DMA,MNAO Southeast,en-US
+US_SE_GA,US Southeast,Georgia,Atlanta DMA,MNAO Southeast,en-US
+US_W_CA,US West,California,Bay Area DMA,MNAO West,en-US
+US_TX_TX,US South,Texas,Dallas DMA,MNAO Central,en-US

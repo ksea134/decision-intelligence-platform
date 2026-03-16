@@ -1,0 +1,5 @@
+snapshot_date,region_code,vehicle_code,web_leads,qualified_leads,test_drives,orders,payment_threshold_usd,lead_to_order_rate_percent
+2026-03-01,US_SE_FL,CX90PHEV,420,176,58,22,850,31
+2026-03-01,US_SE_GA,CX90PHEV,380,151,49,19,845,29
+2026-03-01,US_W_CA,CX90PHEV,465,228,77,31,890,42
+2026-03-01,US_TX_TX,CX90PHEV,395,169,54,24,838,34

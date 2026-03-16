@@ -1,0 +1,8 @@
+Title: Inventory Transfer Feasibility Note
+Date: 2026-03-04
+Author: Supply Chain Planning
+
+North California dealers are operating with demand above available supply for premium family SUV inquiries.
+Up to 150 units of CX-90 PHEV could be transferred from Southeast dealers within two weeks.
+Estimated logistics cost is approximately USD 420 per unit.
+Transfer is operationally feasible, but should be combined with local dealer communication to avoid channel friction.

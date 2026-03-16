@@ -1,0 +1,7 @@
+snapshot_date,region_code,vehicle_code,program_code,apr_percent,avg_term_months,approval_rate_percent,expected_default_rate_percent,projected_month_end_sales_units
+2026-03-01,US_SE_FL,CX90PHEV,standard_apr,6.8,72,61,3.2,46
+2026-03-01,US_SE_FL,CX90PHEV,promo_apr_0_9,0.9,72,73,3.5,55
+2026-03-01,US_SE_FL,CX90PHEV,cashback_3000,6.8,72,68,3.3,52
+2026-03-01,US_SE_GA,CX90PHEV,standard_apr,6.75,72,60,3.1,47
+2026-03-01,US_SE_GA,CX90PHEV,promo_apr_0_9,0.9,72,72,3.4,56
+2026-03-01,US_SE_GA,CX90PHEV,cashback_3000,6.75,72,67,3.3,53
