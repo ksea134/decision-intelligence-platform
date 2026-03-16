@@ -101,7 +101,7 @@ class DataAgent:
                 self._cfg.project_id,
                 self._cfg.dataset_id,
             )
-        self._schema_cache = result
+            self._schema_cache = result
             self._schema_dict = schema
         return self._schema_cache
 
