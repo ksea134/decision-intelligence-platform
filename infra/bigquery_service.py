@@ -47,6 +47,27 @@ def validate_sql(sql: str) -> None:
             raise SQLValidationError(f"Disallowed keyword: {kw}")
 
 
+def _format_schema_for_display(schema: dict) -> str:
+    """
+    スキーマをchat.pyが期待する形式に変換する。
+    
+    chat.py は re.findall(r"Table:", content) でテーブル数をカウントするため、
+    各テーブルに "Table:" プレフィックスを付ける。
+    """
+    lines = []
+    for dataset_id, tables in schema.items():
+        lines.append(f"Dataset: {dataset_id}")
+        for table_id, columns in tables.items():
+            lines.append(f"  Table: {table_id}")
+            for col in columns:
+                col_name = col.get("name", "")
+                col_type = col.get("type", "")
+                col_desc = col.get("description", "")
+                desc_part = f" -- {col_desc}" if col_desc else ""
+                lines.append(f"    - {col_name}: {col_type}{desc_part}")
+    return "\n".join(lines)
+
+
 class BigQueryService:
     def __init__(self, project_id: str):
         self.project_id = project_id
@@ -79,7 +100,9 @@ class BigQueryService:
                         {"name": f.name, "type": f.field_type, "description": f.description or ""}
                         for f in full_table.schema
                     ]
-            return schema, CloudDataResult(content=str(schema), is_connected=True)
+            # スキーマを "Table:" を含む形式に変換
+            formatted_content = _format_schema_for_display(schema)
+            return schema, CloudDataResult(content=formatted_content, is_connected=True)
         except Exception as e:
             error_str = str(e).lower()
             if "403" in error_str or "permission" in error_str:

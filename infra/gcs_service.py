@@ -38,7 +38,9 @@ class GCSService:
                 if blob.name.endswith(('.txt', '.md')):
                     try:
                         text = blob.download_as_text()
-                        contents.append(f"--- {blob.name} ---\n{text}")
+                        # [GCS: filename] タグ形式で保存（chat.py の正規表現と一致させる）
+                        filename = blob.name.split('/')[-1]  # パスからファイル名のみ抽出
+                        contents.append(f"[GCS: {filename}]\n--- {blob.name} ---\n{text}")
                     except Exception as e:
                         logger.warning(f"Failed to download {blob.name}: {e}")
             
