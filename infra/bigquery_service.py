@@ -34,6 +34,14 @@ class SQLResult:
         return pd.DataFrame(self.data, columns=self.columns)
 
 
+@dataclass(frozen=True)
+class CloudDataResult:
+    content: str
+    is_connected: bool
+    error_type: str | None = None
+    error_detail: str | None = None
+
+
 def validate_sql(sql: str) -> None:
     sql_upper = sql.upper().strip()
     if not sql_upper.startswith(("SELECT", "WITH")):
@@ -60,11 +68,10 @@ class BigQueryService:
             )
         return self._client
 
-    @st.cache_data(ttl=300, show_spinner=False)
-    def fetch_schema(_self, project_id: str, dataset_filter: str | None = None) -> dict:
-        """BQスキーマを取得（キャッシュ付き）"""
+    def fetch_schema(self, project_id: str, dataset_filter: str | None = None) -> tuple[dict, CloudDataResult]:
+        """BQスキーマを取得"""
         try:
-            client = _self._get_client()
+            client = self._get_client()
             datasets = list(client.list_datasets())
             schema = {}
             for ds in datasets:
@@ -79,10 +86,24 @@ class BigQueryService:
                         {"name": f.name, "type": f.field_type, "description": f.description or ""}
                         for f in full_table.schema
                     ]
-            return schema
+            return schema, CloudDataResult(content=str(schema), is_connected=True)
         except Exception as e:
+            error_str = str(e).lower()
+            if "403" in error_str or "permission" in error_str:
+                error_type = "auth"
+            elif "404" in error_str or "not found" in error_str:
+                error_type = "not_found"
+            elif "network" in error_str or "connection" in error_str:
+                error_type = "network"
+            else:
+                error_type = "config"
             logger.error(f"Failed to fetch schema: {e}")
-            raise
+            return {}, CloudDataResult(
+                content="",
+                is_connected=False,
+                error_type=error_type,
+                error_detail=str(e),
+            )
 
     def execute_sql(self, sql: str, max_rows: int = 100) -> SQLResult:
         """SQLを実行して結果を返す"""
@@ -110,7 +131,8 @@ def _get_service(project_id: str) -> BigQueryService:
     return _default_service
 
 
-def fetch_bq_schema(project_id: str, dataset_filter: str | None = None) -> dict:
+@st.cache_data(ttl=300, show_spinner=False)
+def fetch_bq_schema(project_id: str, dataset_filter: str | None = None) -> tuple[dict, CloudDataResult]:
     """BQスキーマを取得"""
     service = _get_service(project_id)
     return service.fetch_schema(project_id, dataset_filter)
