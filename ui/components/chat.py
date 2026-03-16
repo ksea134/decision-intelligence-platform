@@ -20,6 +20,7 @@ ui/components/chat.py — チャット画面コンポーネント
 【修正履歴】
 - 2026-03-16: 空プロンプト問題の修正（Gemini API 400エラー対策）
 - 2026-03-16: Phase 1 Agent Router 統合（ReasoningEngineV2）
+- 2026-03-16: ver.2.2.2 ストリーミング表示対応（回答の逐次表示 + Agent状態可視化）
 """
 
 from __future__ import annotations
@@ -45,6 +46,11 @@ from orchestration.reasoning_engine_v2 import ReasoningEngineV2
 from google import genai
 
 # ============================================================
+# バージョン情報
+# ============================================================
+__version__ = "2.2.2"
+
+# ============================================================
 # Phase 1: Agent Router 設定
 # ============================================================
 # True: ReasoningEngineV2（Agent Router）を使用
@@ -62,9 +68,9 @@ _APP_CSS = """
 .stMarkdown h3 { margin-top:1.5rem!important; margin-bottom:0.5rem!important; }
 .stMarkdown h4 { margin-top:1rem!important; margin-bottom:0.3rem!important; }
 div[data-testid="stChatMessage"] div[data-testid="stButton"] > button {
-  height:auto!important; min-height:2.5rem!important; white-space:nowrap!important;
+  height:auto!important; min-height:2.5rem!important; white-space:normal!important;
   font-size:0.9rem!important; font-weight:400!important; text-align:left!important;
-  padding-left:12px!important;
+  padding-left:12px!important; line-height:1.4!important; padding-top:8px!important; padding-bottom:8px!important;
 }
 div[data-testid="stChatMessage"] div[data-testid="stButton"] > button:hover {
   border-color:#ff4b4b!important; color:#ff4b4b!important;
@@ -74,6 +80,10 @@ div[data-testid="stExpander"] div[data-testid="stVerticalBlock"]
 div[data-testid="stButton"] button {
   text-align:left!important; justify-content:flex-start!important;
   white-space:normal!important; height:auto!important; min-height:2.5rem!important;
+}
+/* チャット入力欄の送信ボタンアイコンを右向きに */
+button[data-testid="stChatInputSubmitButton"] svg {
+  transform: rotate(90deg)!important;
 }
 @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
 /* サイドバーフッター用CSS */
@@ -101,6 +111,7 @@ button:active{background-color:#ff4b4b;color:white;border-color:#ff4b4b;}
 
 _ACCENT = "#D2FF00"
 _BLUE   = "#38bdf8"
+_GREEN  = "#22c55e"
 _RED    = "#ff4b4b"
 
 
@@ -323,7 +334,7 @@ def _render_smart_cards(cards: list[dict[str, Any]]) -> None:
 
 
 # ============================================================
-# メインフェーズ（ストリーミング回答生成）
+# メインフェーズ（ストリーミング回答生成）ver.2.2.2
 # ============================================================
 
 def _execute_main_phase(
@@ -338,6 +349,10 @@ def _execute_main_phase(
     """
     Gemini ストリーミング呼び出しを行い、回答を memory に追加する。
     完了後に pending_supplement をセットして st.rerun() する。
+    
+    【ver.2.2.2】回答を逐次表示 + Agent状態を可視化
+    - ThreadPoolExecutor + Queue で秒数カウントを実現
+    - ステータス表示はchat_messageの中に配置
     """
     import logging
     logger = logging.getLogger(__name__)
@@ -347,11 +362,10 @@ def _execute_main_phase(
         st.error("⚠️ プロンプトが空です。")
         return
 
-    status_box = st.empty()
     start_ts = time.time()
     out_data: dict[str, Any] = {}
 
-    # ストリーム専用の進捗表示付き実行
+    # ストリーム取得
     try:
         stream = engine.stream_events(
             user_prompt=prompt,
@@ -359,20 +373,96 @@ def _execute_main_phase(
             cfg=engine._data_agent._cfg,
             data_ctx=data_ctx,
         )
-        chunks = _run_stream_with_progress(
-            status_box,
-            "回答を生成しています…",
-            start_ts,
-            stream,
-            out_data,
-        )
-        logger.info("[PERF] メイン回答生成: %.2f秒", time.time() - start_ts)
     except Exception as exc:
-        status_box.empty()
-        st.error("エラーが発生しました: " + str(exc))
+        st.error("ストリーム開始エラー: " + str(exc))
         return
 
-    status_box.empty()
+    # ストリーム処理を別スレッドで実行
+    stream_queue: Queue = Queue()
+    
+    def _stream_worker():
+        try:
+            for token in stream:
+                stream_queue.put(("token", token))
+            stream_queue.put(("done", None))
+        except Exception as e:
+            stream_queue.put(("error", e))
+    
+    # 【ver.2.2.2】ストリーミング表示: 回答を逐次表示
+    chunks: list[str] = []
+    current_status = "回答を生成しています…"
+    
+    with st.chat_message("assistant"):
+        status_container = st.empty()
+        response_placeholder = st.empty()
+        
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            executor.submit(_stream_worker)
+            
+            while True:
+                # 毎ループで秒数を更新
+                elapsed = int(time.time() - start_ts)
+                status_container.markdown(
+                    f"""<div style="display:flex;align-items:center;gap:10px;padding:4px 0;
+                    color:rgba(255,255,255,0.85);font-size:0.9rem;">
+                    <div style="width:14px;height:14px;border-radius:50%;
+                    border:2px solid rgba(255,255,255,0.25);border-top-color:#22c55e;border-right-color:#22c55e;
+                    animation:spin 0.8s linear infinite;flex-shrink:0;"></div>
+                    <span>{current_status} ({elapsed}秒)</span>
+                    </div>""",
+                    unsafe_allow_html=True,
+                )
+                
+                try:
+                    kind, payload = stream_queue.get(timeout=0.1)  # 100msタイムアウト
+                    
+                    if kind == "token":
+                        token = payload
+                        
+                        # テキストトークン（文字列）
+                        if isinstance(token, str):
+                            chunks.append(token)
+                            response_placeholder.markdown("".join(chunks) + "▌")
+                        
+                        # dictイベント（旧形式の互換性）
+                        elif isinstance(token, dict):
+                            if "status" in token:
+                                current_status = token["status"]
+                            else:
+                                out_data.update(token)
+                        
+                        # StreamEvent オブジェクト（Agent Router対応）
+                        elif hasattr(token, 'kind'):
+                            if token.kind == "text":
+                                chunks.append(token.text)
+                                response_placeholder.markdown("".join(chunks) + "▌")
+                            elif token.kind == "status":
+                                current_status = token.status
+                            elif token.kind == "agent_selected":
+                                current_status = token.status
+                            elif token.kind == "sql":
+                                out_data["executed_sql"] = token.executed_sql
+                                out_data["sql_result"] = token.sql_result
+                                row_count = token.sql_result.row_count if token.sql_result else 0
+                                current_status = f"BigQuery: {row_count}件取得"
+                    
+                    elif kind == "done":
+                        break
+                    
+                    elif kind == "error":
+                        raise payload
+                        
+                except Empty:
+                    pass  # タイムアウト → 次のループで秒数更新
+        
+        # 最終表示（カーソル除去）
+        if chunks:
+            response_placeholder.markdown("".join(chunks))
+    
+    # ステータスをクリア
+    status_container.empty()
+    
+    logger.info("[PERF] メイン回答生成: %.2f秒", time.time() - start_ts)
 
     full_text = "".join(chunks)
     if not full_text and not out_data:
@@ -409,6 +499,10 @@ def _execute_main_phase(
     st.rerun()
 
 
+# ============================================================
+# 旧バージョンのストリーム処理（補足フェーズ用に残す）
+# ============================================================
+
 def _collect_stream_chunks(stream: Any, out_data: dict, queue: Queue) -> list[str]:
     """ストリームを消費し、テキストチャンクを収集する"""
     chunks: list[str] = []
@@ -429,7 +523,7 @@ def _collect_stream_chunks(stream: Any, out_data: dict, queue: Queue) -> list[st
             elif token.kind == "status":
                 queue.put(("phase", token.status))
             elif token.kind == "agent_selected":
-                queue.put(("phase", f"🎯 {token.status}"))
+                queue.put(("phase", token.status))
             elif token.kind == "sql":
                 out_data["executed_sql"] = token.executed_sql
                 out_data["sql_result"] = token.sql_result
@@ -770,16 +864,16 @@ def _render_badges(
         badges.append(_badge("📂", "ローカル: " + label, _ACCENT))
 
     if sql_result is not None:
-        badges.append(_badge("🗄️", f"BigQuery: 実データ取得済（{sql_result.row_count}件）", _BLUE))
+        badges.append(_badge("🗄️", f"BigQuery: 実データ取得済（{sql_result.row_count}件）", _GREEN))
     elif data_ctx.bq_result.is_connected:
-        badges.append(_badge("🗄️", "BigQuery: スキーマ参照", _BLUE, border_opacity=0.35))
+        badges.append(_badge("🗄️", "BigQuery: スキーマ参照", _GREEN, border_opacity=0.35))
     elif data_ctx.bq_result.is_error:
         badges.append(_badge("🗄️", "BigQuery: 未接続", _RED))
 
     if data_ctx.gcs_result.is_error:
         badges.append(_badge("☁️", "GCS: 未接続", _RED))
     elif data_ctx.gcs_result.is_connected:
-        badges.append(_badge("☁️", "GCS: 実データ参照", _BLUE, border_opacity=0.35))
+        badges.append(_badge("☁️", "GCS: 実データ参照", _GREEN, border_opacity=0.35))
 
     if badges:
         st.markdown(
@@ -792,6 +886,13 @@ def _render_badges(
         citations = "　".join(f"※{i+1}：{name}" for i, name in enumerate(files))
         st.markdown(
             f"<p style='color:rgba(255,255,255,0.4);font-size:0.78rem;margin-top:6px;'>{citations}</p>",
+            unsafe_allow_html=True,
+        )
+    else:
+        # filesが空の場合: AIが[FILES:]を出力しなかった
+        st.markdown(
+            "<p style='color:rgba(255,200,100,0.6);font-size:0.78rem;margin-top:6px;'>"
+            "出典情報: AIからの戻り値なし</p>",
             unsafe_allow_html=True,
         )
 

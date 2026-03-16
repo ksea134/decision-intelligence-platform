@@ -27,6 +27,7 @@ from __future__ import annotations
 import json
 import logging
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, asdict
 from typing import Any, Generator, Optional
 
@@ -349,26 +350,57 @@ class ReasoningEngineV2:
         """Agent Router を使用したストリーミング"""
         
         # 意図分類フェーズ
-        yield StreamEvent(kind="status", status="🧠 質問を分析しています...")
+        yield StreamEvent(kind="status", status="質問を分析しています...")
         
-        # ワークフローを実行（現時点では非ストリーミング）
-        # 将来的には LangGraph のストリーミング機能を使用
-        workflow_result = run_workflow(
-            user_prompt=user_prompt,
-            display_label=user_prompt,
-            company=company,
-            company_folder=cfg.folder_name if cfg else "",
-            bq_schema=data_ctx.bq_result.content if data_ctx else "",
-            gcs_docs=data_ctx.gcs_result.content if data_ctx else "",
-            knowledge=data_ctx.assets.knowledge_text if data_ctx and data_ctx.assets else "",
-            prompts=data_ctx.assets.prompt_text if data_ctx and data_ctx.assets else "",
-            structured_data=data_ctx.assets.structured_text if data_ctx and data_ctx.assets else "",
-            unstructured_data=data_ctx.assets.unstructured_text if data_ctx and data_ctx.assets else "",
-            bq_connected=data_ctx.bq_connected if data_ctx else False,
-            client=self._client,
-            use_llm_router=self._use_llm_router,
-            use_llm_agents=self._use_llm_agents,
-        )
+        # run_workflow を別スレッドで実行
+        result_holder: list = []
+        error_holder: list = []
+        
+        def _run_workflow():
+            try:
+                result_holder.append(run_workflow(
+                    user_prompt=user_prompt,
+                    display_label=user_prompt,
+                    company=company,
+                    company_folder=cfg.folder_name if cfg else "",
+                    bq_schema=data_ctx.bq_result.content if data_ctx else "",
+                    gcs_docs=data_ctx.gcs_result.content if data_ctx else "",
+                    knowledge=data_ctx.assets.knowledge_text if data_ctx and data_ctx.assets else "",
+                    prompts=data_ctx.assets.prompt_text if data_ctx and data_ctx.assets else "",
+                    structured_data=data_ctx.assets.structured_text if data_ctx and data_ctx.assets else "",
+                    unstructured_data=data_ctx.assets.unstructured_text if data_ctx and data_ctx.assets else "",
+                    bq_connected=data_ctx.bq_connected if data_ctx else False,
+                    client=self._client,
+                    use_llm_router=self._use_llm_router,
+                    use_llm_agents=self._use_llm_agents,
+                ))
+            except Exception as e:
+                error_holder.append(e)
+        
+        # 経過報告用のステータス
+        progress_phases = [
+            "意図を分類しています...",
+            "専門エージェントを選択しています...",
+            "データを取得しています...",
+            "回答を生成しています...",
+        ]
+        
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(_run_workflow)
+            
+            phase_idx = 0
+            while not future.done():
+                time.sleep(1.0)
+                if not future.done():
+                    status_msg = progress_phases[min(phase_idx, len(progress_phases) - 1)]
+                    yield StreamEvent(kind="status", status=status_msg)
+                    phase_idx += 1
+        
+        # エラーチェック
+        if error_holder:
+            raise error_holder[0]
+        
+        workflow_result = result_holder[0] if result_holder else {}
         
         # 分類結果を通知
         classification = workflow_result.get("classification", {})
@@ -376,20 +408,20 @@ class ReasoningEngineV2:
         confidence = classification.get("confidence", 0.0)
         
         agent_labels = {
-            "analysis": "📊 要因分析",
-            "comparison": "⚖️ 比較分析",
-            "forecast": "🔮 予測分析",
-            "general": "💬 汎用回答",
+            "analysis": "要因分析",
+            "comparison": "比較分析",
+            "forecast": "予測分析",
+            "general": "汎用回答",
         }
         
         yield StreamEvent(
             kind="agent_selected",
-            status=f"{agent_labels.get(agent_type, '💬 回答生成')}エージェントを選択しました",
+            status=f"{agent_labels.get(agent_type, '回答生成')}エージェントを選択しました",
             agent_type=agent_type,
             confidence=confidence,
         )
         
-        yield StreamEvent(kind="status", status="✍️ 回答を生成しています...")
+        yield StreamEvent(kind="status", status="回答を生成しています...")
         
         # エージェント結果を取得
         agent_result = workflow_result.get("agent_result")
@@ -412,7 +444,7 @@ class ReasoningEngineV2:
                     sql_result=agent_result.get("sql_result"),
                 )
         
-        yield StreamEvent(kind="complete", status="✅ 完了")
+        yield StreamEvent(kind="complete", status="完了")
     
     def _stream_direct(
         self,
@@ -422,7 +454,7 @@ class ReasoningEngineV2:
         data_ctx: Any,
     ) -> Generator[StreamEvent, None, None]:
         """従来の直接ストリーミング（後方互換性用）"""
-        yield StreamEvent(kind="status", status="✍️ 回答を生成しています...")
+        yield StreamEvent(kind="status", status="回答を生成しています...")
         
         # 簡易実装
         result = self._run_direct(
@@ -440,7 +472,7 @@ class ReasoningEngineV2:
                 chunk = response_text[i:i + chunk_size]
                 yield StreamEvent(kind="text", text=chunk)
         
-        yield StreamEvent(kind="complete", status="✅ 完了")
+        yield StreamEvent(kind="complete", status="完了")
     
     # ----------------------------------------------------------
     # 補足フェーズ

@@ -307,8 +307,21 @@ def build_data_context_section(state: WorkflowState) -> str:
     
     Returns:
         データコンテキストのテキスト
+    
+    Note:
+        prompts は「最優先指示」として先頭に配置される。
+        ユーザー定義の回答方針・フォーマットがAgent固有の指示より優先される。
     """
     sections = []
+    
+    # === 最優先: ユーザー定義の回答方針 ===
+    prompts = state.get("prompts", "")
+    if prompts:
+        sections.append(
+            "## 【最優先】回答方針・フォーマット\n"
+            "以下の指示は他のすべての指示より優先されます。必ず従ってください。\n\n"
+            f"{prompts}"
+        )
     
     # BigQuery スキーマ
     bq_schema = state.get("bq_schema", "")
@@ -334,5 +347,14 @@ def build_data_context_section(state: WorkflowState) -> str:
     unstructured = state.get("unstructured_data", "")
     if unstructured:
         sections.append(f"## 非構造化データ\n{unstructured}")
+    
+    # === 出典表示ルール（必須） ===
+    sections.append(
+        "## 出典表示ルール【必須】\n"
+        "回答の最後に、参照したファイルを必ず以下の形式で記載してください：\n"
+        "[FILES: ファイル名1, ファイル名2]\n\n"
+        "参照したファイルがない場合は以下のように記載してください：\n"
+        "[FILES: なし]"
+    )
     
     return "\n\n".join(sections)

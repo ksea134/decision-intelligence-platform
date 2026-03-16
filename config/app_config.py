@@ -14,6 +14,10 @@ config/app_config.py — アプリ全体の設定値
 - AppConfig を継承・整理
 - UIConfig（accent色・chart設定等）は ui/層に移動
 - PathConfig をこのファイルに統合
+
+【バージョン履歴】
+- ver.1.0.0: 初版
+- ver.2.2.2: ストリーミング表示対応（回答の逐次表示 + Agent状態可視化）
 """
 
 from __future__ import annotations
@@ -40,7 +44,7 @@ class AppConfig:
         knowledge_preview_len:前提知識のプレビュー表示文字数。
         error_msg_limit:      エラーメッセージの文字数上限。
     """
-    version:               str = "ver.1.0.0"
+    version:               str = "ver.2.2.2"
     title:                 str = "意思決定支援AI"
     gemini_model:          str = "gemini-2.5-flash"
     companies_csv_path:    str = "data/companies.csv"
