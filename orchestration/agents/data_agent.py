@@ -97,10 +97,12 @@ class DataAgent:
 
     def _fetch_schema(self) -> CloudDataResult:
         if self._schema_cache is None:
-            self._schema_cache = fetch_bq_schema(
+            schema, result = fetch_bq_schema(
                 self._cfg.project_id,
                 self._cfg.dataset_id,
             )
+        self._schema_cache = result
+            self._schema_dict = schema
         return self._schema_cache
 
     def _fetch_gcs(self) -> CloudDataResult:
