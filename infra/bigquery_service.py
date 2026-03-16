@@ -9,6 +9,7 @@ import streamlit as st
 from google.cloud import bigquery
 
 from infra.gcp_auth import get_credentials
+from domain.models import CloudDataResult
 
 logger = logging.getLogger(__name__)
 
@@ -32,14 +33,6 @@ class SQLResult:
     def to_dataframe(self):
         import pandas as pd
         return pd.DataFrame(self.data, columns=self.columns)
-
-
-@dataclass(frozen=True)
-class CloudDataResult:
-    content: str
-    is_connected: bool
-    error_type: str | None = None
-    error_detail: str | None = None
 
 
 def validate_sql(sql: str) -> None:
