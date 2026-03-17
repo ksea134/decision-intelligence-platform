@@ -388,17 +388,18 @@ def _execute_main_phase(
         except Exception as e:
             stream_queue.put(("error", e))
     
-    # 【ver.2.2.2】ストリーミング表示: 回答を逐次表示
+    # 【ver.2.2.3】最終回答のみ表示: 全処理完了まではスピナーのみ表示
     chunks: list[str] = []
     current_status = "回答を生成しています…"
-    
+    has_tool_call = False  # Tool Callが発生したかどうか
+
     with st.chat_message("assistant"):
         status_container = st.empty()
         response_placeholder = st.empty()
-        
+
         with ThreadPoolExecutor(max_workers=1) as executor:
             executor.submit(_stream_worker)
-            
+
             while True:
                 # 毎ループで秒数を更新
                 elapsed = int(time.time() - start_ts)
@@ -412,30 +413,37 @@ def _execute_main_phase(
                     </div>""",
                     unsafe_allow_html=True,
                 )
-                
+
                 try:
                     kind, payload = stream_queue.get(timeout=0.1)  # 100msタイムアウト
-                    
+
                     if kind == "token":
                         token = payload
-                        
+
                         # テキストトークン（文字列）
                         if isinstance(token, str):
-                            chunks.append(token)
-                            response_placeholder.markdown("".join(chunks) + "▌")
-                        
+                            if has_tool_call:
+                                # Tool Call後のテキスト = 最終回答 → 蓄積のみ（表示しない）
+                                chunks.append(token)
+                            else:
+                                # Tool Call前のテキスト → 蓄積のみ（表示しない）
+                                chunks.append(token)
+
                         # dictイベント（旧形式の互換性）
                         elif isinstance(token, dict):
                             if "status" in token:
                                 current_status = token["status"]
+                                # Tool Call発火時: それまでのテキストをクリア
+                                if "ツールを実行" in token["status"] or "BQ実行中" in token["status"]:
+                                    has_tool_call = True
+                                    chunks.clear()
                             else:
                                 out_data.update(token)
-                        
+
                         # StreamEvent オブジェクト（Agent Router対応）
                         elif hasattr(token, 'kind'):
                             if token.kind == "text":
-                                chunks.append(token.text)
-                                response_placeholder.markdown("".join(chunks) + "▌")
+                                chunks.append(token)
                             elif token.kind == "status":
                                 current_status = token.status
                             elif token.kind == "agent_selected":
@@ -445,17 +453,17 @@ def _execute_main_phase(
                                 out_data["sql_result"] = token.sql_result
                                 row_count = token.sql_result.row_count if token.sql_result else 0
                                 current_status = f"BigQuery: {row_count}件取得"
-                    
+
                     elif kind == "done":
                         break
-                    
+
                     elif kind == "error":
                         raise payload
-                        
+
                 except Empty:
                     pass  # タイムアウト → 次のループで秒数更新
-        
-        # 最終表示（カーソル除去）
+
+        # 全処理完了後に一括表示
         if chunks:
             response_placeholder.markdown("".join(chunks))
     

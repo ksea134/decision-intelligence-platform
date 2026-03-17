@@ -1,4 +1,4 @@
-計測日時,ライン名,ステータス,稼働率_pct,生産個数,計画停止時間_分
+measured_at,line_name,status,operation_rate_pct,production_count,planned_downtime_min
 2026-03-09 08:00,A-3,正常,98.5,450,0
 2026-03-10 08:00,A-3,正常,97.2,442,0
 2026-03-11 08:00,A-3,注意,94.1,410,15

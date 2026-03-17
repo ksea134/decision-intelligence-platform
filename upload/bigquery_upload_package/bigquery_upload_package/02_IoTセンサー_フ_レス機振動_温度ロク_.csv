@@ -1,4 +1,4 @@
-タイムスタンプ,設備ID,モーター振動値_mm_s,ベアリング温度_C,電流値_A
+timestamp,equipment_id,motor_vibration_mm_s,bearing_temp_c,current_a
 2026-03-13 10:00,PRESS-A3-01,4.2,52.1,45.2
 2026-03-13 11:00,PRESS-A3-01,4.8,54.5,46.1
 2026-03-13 12:00,PRESS-A3-01,5.5,58.2,47.5

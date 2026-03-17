@@ -1,4 +1,4 @@
-出荷予定日,顧客名,製品番号,受注数量,重要度
+shipment_date,customer_name,product_number,order_quantity,priority
 2026-03-16,大手自動車X社,MOT-AX01,5000,特A
 2026-03-17,大手自動車X社,MOT-AX01,5000,特A
 2026-03-18,部品メーカーY,GR-Y22,2000,B
