@@ -1,0 +1,5 @@
+Case_ID,Date,Store_ID,Category,Subject,Status,Lawyer_Involved_Flag
+EP-2026-0442,2026-02-10,FL-8812,Labor_Violation,Unpaid_Overtime,In_Progress,Yes
+EP-2026-0458,2026-02-15,FL-8812,Labor_Violation,Misclassification_Claim,Pending,Yes
+EP-2026-0489,2026-02-22,FL-8815,Labor_Violation,Unpaid_Wage,In_Progress,Yes
+EP-2026-0501,2026-03-01,FL-8812,Labor_Violation,Class_Action_Inquiry,New,Yes

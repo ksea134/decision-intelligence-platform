@@ -166,9 +166,13 @@ class ReasoningEngine:
             unstructured=data_ctx.assets.unstructured_text,
             bq_connected=data_ctx.bq_connected,
         )
+        logger.warning("[DEBUG] bq_connected=%s, has_必須アクション=%s",
+                       data_ctx.bq_connected, "必須アクション" in sys_prompt)
+        logger.warning("[DEBUG] bq_schema(先頭500)=%s", data_ctx.bq_result.content[:500])
+        logger.warning("[DEBUG] tools=%s", "query_bigquery" if data_ctx.bq_connected else "None")
 
         def query_bigquery(sql_query: str) -> str:
-            """Tool stub — Gemini reads the signature to generate SQL."""
+            """BigQueryでSQLを実行してデータを取得する。日本語カラム名はバッククォートで囲むこと。例: SELECT `稼働率_pct` FROM `demo_factory`.`mes_a3_line_operation`"""
             pass
 
         tools = [query_bigquery] if data_ctx.bq_connected else None
@@ -212,17 +216,25 @@ class ReasoningEngine:
                 for fc in function_calls:
                     if fc.name == "query_bigquery":
                         sql = fc.args.get("sql_query", "") if isinstance(fc.args, dict) else getattr(fc.args, "sql_query", "")
+                        logger.warning("[DEBUG] Tool Call発火! SQL=%s", sql)
                         yield {"status": f"🗄️ BQ実行中: {sql[:20]}..."}
 
-                        result = self._data_agent.execute_sql(sql)
-                        if result is None:
-                            res_str = "SQL Execution Error"
+                        try:
+                            result = self._data_agent.execute_sql(sql)
+                            if result is None:
+                                logger.warning("[DEBUG] execute_sql returned None")
+                                res_str = "SQL Execution Error"
+                                yield {"executed_sql": sql, "sql_result": None}
+                            else:
+                                df = result.to_dataframe()
+                                res_str = df.head(100).to_csv(index=False)
+                                logger.warning("[DEBUG] SQL成功! rows=%d, csv=%s", result.row_count, res_str[:200])
+                                from dataclasses import asdict
+                                yield {"executed_sql": sql, "sql_result": asdict(result)}
+                        except Exception as sql_exc:
+                            logger.error("[DEBUG] SQL実行エラー: %s", sql_exc)
+                            res_str = f"SQL Execution Error: {sql_exc}"
                             yield {"executed_sql": sql, "sql_result": None}
-                        else:
-                            df = result.to_dataframe()
-                            res_str = df.head(100).to_csv(index=False)
-                            from dataclasses import asdict
-                            yield {"executed_sql": sql, "sql_result": asdict(result)}
 
                         tool_parts.append(types.Part.from_function_response(name=fc.name, response={"result": res_str}))
 

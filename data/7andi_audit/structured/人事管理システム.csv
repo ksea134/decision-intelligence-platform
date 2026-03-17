@@ -1,0 +1,6 @@
+Date,Region,Store_ID,Employee_Retention_Rate,Overtime_Hours_Reported,Avg_Store_Manager_Tenure,Alert_Flag
+2026-01,Florida_SE,FL-8812,72%,4.5,1.2,High_Turnover
+2026-01,Florida_SE,FL-8815,68%,3.8,0.8,High_Turnover
+2026-02,Florida_SE,FL-8812,65%,2.1,0.5,Critical_Deviation
+2026-02,Florida_SE,FL-8815,61%,1.9,0.4,Critical_Deviation
+2026-02,Georgia_S,GA-9901,81%,12.5,2.5,Normal

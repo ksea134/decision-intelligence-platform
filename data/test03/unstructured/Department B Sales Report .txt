@@ -1,0 +1,1 @@
+In August, our department exceeded 5 million JPY in sales. However, the cyberattack in late August caused a severe system shutdown. Due to this downtime, our largest client, "TechCorp", completely cancelled their upcoming major contract. This was a huge blow to our September revenue. We must urgently migrate to a secure cloud environment.

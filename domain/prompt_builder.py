@@ -126,6 +126,8 @@ def _build_sql_rules(bq_connected: bool) -> str:
         "■ SQL実行ルール:\n"
         "- スキーマに記載されていないテーブルへのSQLは絶対に生成しないでください。\n"
         "- SELECT文のみ使用可能です。INSERT/UPDATE/DELETE等は禁止。\n"
+        "- 日本語のカラム名・テーブル名は必ずバッククォート(`)で囲んでください。\n"
+        "  例: SELECT `稼働率_pct`, `計測日時` FROM `demo_factory`.`mes_a3_line_operation`\n"
         "- ツールから得られた数値を、回答本文に必ず記載してください。\n"
         "- SQL文そのものを回答本文に絶対に記載しないでください。\n\n"
     )

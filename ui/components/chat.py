@@ -55,7 +55,7 @@ __version__ = "2.2.2"
 # ============================================================
 # True: ReasoningEngineV2（Agent Router）を使用
 # False: ReasoningEngine（従来版）を使用
-USE_AGENT_ROUTER = True
+USE_AGENT_ROUTER = False
 
 
 # ============================================================
@@ -140,7 +140,7 @@ def _get_client() -> genai.Client:
     except KeyError:
         st.error("GEMINI_API_KEY が Streamlit Secrets に設定されていません。")
         st.stop()
-    return genai.Client(api_key=api_key, http_options={"timeout": 120_000})
+    return genai.Client(api_key=api_key, http_options={"timeout": 300_000})
 
 
 def _get_memory() -> SessionMemory:
