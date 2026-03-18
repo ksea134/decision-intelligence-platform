@@ -86,6 +86,25 @@ button[data-testid="stChatInputSubmitButton"] svg {
   transform: rotate(90deg)!important;
 }
 @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+/* 右側パネル: Expanderダークテーマ */
+div[data-testid="stExpander"] details {
+  background-color: #111827 !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 8px !important;
+}
+div[data-testid="stExpander"] details summary {
+  background-color: #1f2937 !important;
+  color: #f3f4f6 !important;
+  border-radius: 8px !important;
+}
+div[data-testid="stExpander"] details[open] summary {
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 8px 8px 0 0 !important;
+}
+div[data-testid="stExpander"] details div[data-testid="stExpanderDetails"] {
+  background-color: #111827 !important;
+  color: #e5e7eb !important;
+}
 /* サイドバーフッター用CSS */
 [data-testid="stSidebarUserContent"] { padding-bottom:80px!important; }
 .sidebar-footer {
@@ -225,29 +244,6 @@ def render_chat(selected_company: str, cfg: CloudConfig, base_dir: str) -> None:
     with col_monitor:
         _render_right_column(selected_company, data_ctx, memory)
     with col_chat:
-        # pending_prompt の処理をここで行う（スマートカード・質問履歴・入力欄）
-        # _render_left_column より先に実行することで同一サイクルの競合を防ぐ
-        if "pending_prompt" in st.session_state:
-            pending_prompt  = st.session_state.pop("pending_prompt")
-            pending_display = st.session_state.pop("pending_display", None)
-            
-            # 【修正】pending_promptが空の場合は静かにスキップ（警告表示しない）
-            # session_stateに残存する不正な値を無視して続行
-            if pending_prompt and str(pending_prompt).strip():
-                display_text = pending_display if pending_display and str(pending_display).strip() else pending_prompt
-                # 【追加】ベースプログラムと同じ: スピナー表示前にユーザーの質問文を表示
-                with st.chat_message("user"):
-                    st.markdown(display_text)
-                # 【修正】スマートカード経由かどうかを判定（pending_displayが存在すればスマートカード）
-                is_smart_card = pending_display is not None
-                _execute_main_phase(
-                    prompt=pending_prompt,
-                    display=display_text,
-                    memory=memory, engine=engine,
-                    data_ctx=data_ctx, selected_company=selected_company,
-                    is_smart_card=is_smart_card,
-                )
-            # else: 空の場合は何もせず次の描画へ進む
         _render_left_column(
             memory=memory, engine=engine,
             data_ctx=data_ctx, selected_company=selected_company,
@@ -275,6 +271,24 @@ def _render_left_column(
                 st.markdown(msg.get("content", ""))
             else:
                 _render_assistant_message(index, msg, data_ctx, selected_company)
+
+    # pending_prompt の処理（メッセージ履歴の後に描画することで正しい順序を維持）
+    if "pending_prompt" in st.session_state:
+        pending_prompt  = st.session_state.pop("pending_prompt")
+        pending_display = st.session_state.pop("pending_display", None)
+
+        if pending_prompt and str(pending_prompt).strip():
+            display_text = pending_display if pending_display and str(pending_display).strip() else pending_prompt
+            with st.chat_message("user"):
+                st.markdown(display_text)
+            is_smart_card = pending_display is not None
+            _execute_main_phase(
+                prompt=pending_prompt,
+                display=display_text,
+                memory=memory, engine=engine,
+                data_ctx=data_ctx, selected_company=selected_company,
+                is_smart_card=is_smart_card,
+            )
 
     # 質問履歴
     history = memory.get_question_history(selected_company)

@@ -177,13 +177,28 @@ class ReasoningEngine:
             pass
 
         tools = [query_bigquery] if data_ctx.bq_connected else None
+        # BQ接続時は初回のみツール呼び出しを強制（ANY）し、確実にデータ取得させる
+        # 2回目以降（ツール結果を受け取った後）は自動判断（AUTO）に切り替える
+        if tools:
+            tool_config_forced = types.ToolConfig(
+                function_calling_config=types.FunctionCallingConfig(mode="ANY")
+            )
+            tool_config_auto = types.ToolConfig(
+                function_calling_config=types.FunctionCallingConfig(mode="AUTO")
+            )
+        else:
+            tool_config_forced = None
+            tool_config_auto = None
+
         config = types.GenerateContentConfig(
             system_instruction=sys_prompt,
             tools=tools,
+            tool_config=tool_config_forced,
             temperature=0.0,
         )
 
         current_history = list(history)
+        is_first_call = True
 
         while True:
             try:
@@ -252,6 +267,15 @@ class ReasoningEngine:
 
                 current_history.append(types.Content(role="user", parts=tool_parts))
                 yield {"status": "✍️ データを元に回答を生成しています..."}
+                # ツール結果を渡した後はAUTOに切り替え（テキスト回答を許可）
+                if is_first_call and tool_config_auto:
+                    config = types.GenerateContentConfig(
+                        system_instruction=sys_prompt,
+                        tools=tools,
+                        tool_config=tool_config_auto,
+                        temperature=0.0,
+                    )
+                    is_first_call = False
             else:
                 break
 
