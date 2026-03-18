@@ -441,15 +441,15 @@ def _execute_main_phase(
 
                         # dictイベント（旧形式の互換性）
                         elif isinstance(token, dict):
-                            if "agent_type" in token:
-                                # Router分類結果
+                            if "flow_steps" in token:
+                                out_data["flow_steps"] = token["flow_steps"]
+                            elif "agent_type" in token:
                                 out_data["agent_type"] = token["agent_type"]
                                 out_data["agent_confidence"] = token.get("confidence", 0)
                                 if "status" in token:
                                     current_status = token["status"]
                             elif "status" in token:
                                 current_status = token["status"]
-                                # Tool Call発火時: それまでのテキストをクリア
                                 if "ツールを実行" in token["status"] or "BQ実行中" in token["status"]:
                                     has_tool_call = True
                                     chunks.clear()
@@ -505,6 +505,7 @@ def _execute_main_phase(
         "sql_result": out_data.get("sql_result"),
         "sql_query": out_data.get("executed_sql") or parsed.sql or "",
         "artifacts": {},
+        "flow_steps": out_data.get("flow_steps", []),
     }
 
     memory.add_message(user_msg)
@@ -686,7 +687,9 @@ def _execute_supplement_phase(
     )
     logger.info("[PERF] 思考ロジック生成: %.2f秒", time.time() - start_ts)
 
-    # インフォグラフィックを経過秒数付きで生成（timestamp, companyを渡す）
+    # インフォグラフィックを経過秒数付きで生成
+    # 【重要】display_text はAIの回答文（parsed.display_text）
+    logger.warning("[DEBUG] インフォグラフィック入力テキスト(%d文字): %s", len(display_text), display_text[:200])
     start_ts = time.time()
     info_html, info_data = _run_with_progress(
         status_box, "インフォグラフィックを生成しています…", start_ts,
@@ -1165,11 +1168,26 @@ def _render_right_column(
         st.markdown(assets.prompt_text) if assets.prompt_text else st.info("設定なし")
 
     latest = next((m for m in reversed(memory.get_messages()) if m["role"] == "assistant"), None)
-    with st.expander("💭 AI思考ロジック", expanded=True):
+    with st.expander("AI思考ロジック", expanded=True):
         if latest and latest.get("thought_process"):
             st.markdown(latest["thought_process"])
         else:
             st.info("回答の表示から数秒後に、思考ロジックが表示されます。")
+
+    with st.expander("AI処理フロー", expanded=True):
+        if latest and latest.get("flow_steps"):
+            for step in latest["flow_steps"]:
+                check = "completed" if step.get("done") else "pending"
+                icon = "&#x2705;" if step.get("done") else "&#x23F3;"
+                name = step.get("step", "")
+                detail = step.get("detail", "")
+                detail_html = f"<span style='color:rgba(255,255,255,0.5);font-size:0.8rem;margin-left:8px;'>{detail}</span>" if detail else ""
+                st.markdown(
+                    f"<div style='padding:4px 0;font-size:0.95rem;'>{icon} {name}{detail_html}</div>",
+                    unsafe_allow_html=True,
+                )
+        else:
+            st.info("質問を送信すると、処理フローが表示されます。")
 
     st.markdown(
         "<div style='display:flex;align-items:center;gap:8px;margin:16px 0 10px 0;'>"

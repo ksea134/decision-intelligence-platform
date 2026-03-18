@@ -143,15 +143,9 @@ class RouterAgent:
         if not user_prompt or not user_prompt.strip():
             logger.warning("[Router] Empty prompt, returning general")
             return self._create_result("general", 0.5, "空の質問", [])
-        
-        try:
-            return self._classify_with_llm(user_prompt)
-        except Exception as e:
-            logger.error("[Router] LLM classification failed: %s", e)
-            if self._fallback_enabled:
-                logger.info("[Router] Falling back to keyword-based classification")
-                return self._classify_with_keywords(user_prompt)
-            raise
+
+        # キーワード分類のみ使用（LLM分類はAPI遅延の原因となるため廃止）
+        return self._classify_with_keywords(user_prompt)
     
     def _classify_with_llm(self, user_prompt: str) -> ClassificationResult:
         """
@@ -184,7 +178,10 @@ class RouterAgent:
         )
         
         # レスポンスのパース
-        response_text = response.text.strip()
+        raw_text = response.text if response.text else ""
+        response_text = raw_text.strip()
+        if not response_text:
+            raise ValueError("Router LLM returned empty response")
         logger.debug("[Router] LLM response: %s", response_text)
         
         # JSON をパース

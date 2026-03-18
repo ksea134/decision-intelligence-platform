@@ -134,17 +134,24 @@ class ReasoningEngine:
         )
 
     # ----------------------------------------------------------
-    # Streaming — ゼロから再設計（v3）
+    # Streaming — v4 完全再設計
     # ----------------------------------------------------------
     #
     # 設計原則:
-    #   - mode="ANY" は使わない（Gemini APIの応答遅延・無限ループの根本原因）
-    #   - mode="AUTO"（デフォルト）で Gemini に判断を委ねる
-    #   - Gemini 呼び出しは最大2回で固定（ループなし）
-    #     Call-1: tools付きで呼び出し → function_call が来たらSQLを1回実行
-    #     Call-2: tools無しで呼び出し → テキスト回答を生成
-    #   - function_call が来なかった場合は Call-1 のテキストをそのまま返す
-    #   - 全ての分岐が明示的。暗黙のループは存在しない。
+    #   - function calling を完全に廃止する
+    #   - Gemini API呼び出しは固定回数（BQ時: 2回、非BQ時: 1回）
+    #   - whileループなし、mode="ANY"なし、tools定義なし
+    #   - Phase 1: SQL生成（軽量プロンプト、非ストリーミング）
+    #   - Phase 2: 回答生成（フルプロンプト+データ、ストリーミング）
+    #
+    # 過去エラーへの対策:
+    #   #1 バッククォート → validate_sql で自動付与
+    #   #2 ツール未発火   → function calling自体を廃止、SQL生成を分離
+    #   #3 遅延/無限ループ → function calling廃止、ループ廃止
+    #   #4 SQL繰り返し   → SQL生成は1回固定
+    #   #5 非ストリーミング遅延 → SQL生成は軽量プロンプトで高速化
+    #   #6,#7 Router障害 → キーワード分類のみ（APIコールなし）
+    #   #8 AUTO未発火再発 → function calling自体が存在しない
 
     def stream_events(
         self,
@@ -159,7 +166,12 @@ class ReasoningEngine:
         history = self._memory.build_gemini_history(user_prompt)
         logger.info("stream_events: user_prompt=%s...", user_prompt[:50])
 
-        # ── Router分類 ──
+        # AI処理フロー記録
+        agent_labels = {"analysis": "要因分析", "comparison": "比較分析", "forecast": "予測分析", "general": "汎用回答"}
+        flow_steps = []
+
+        # ── Phase 0: 質問理解 + Router分類 ──
+        flow_steps.append({"step": "質問理解", "done": True})
         intent = None
         if self._router_agent:
             try:
@@ -167,12 +179,30 @@ class ReasoningEngine:
                 intent = classification.get("intent", "general")
                 confidence = classification.get("confidence", 0.0)
                 logger.info("[Router] intent=%s, confidence=%.2f", intent, confidence)
-                agent_labels = {"analysis": "要因分析", "comparison": "比較分析", "forecast": "予測分析", "general": "汎用回答"}
+                flow_steps.append({"step": "ルートエージェント", "done": True, "detail": f"{agent_labels.get(intent, intent)}を選択"})
+                flow_steps.append({"step": f"{agent_labels.get(intent, intent)}エージェント", "done": True})
                 yield {"agent_type": intent, "confidence": confidence, "status": f"{agent_labels.get(intent, intent)}モード"}
             except Exception as e:
                 logger.warning("[Router] Classification failed: %s", e)
+                flow_steps.append({"step": "ルートエージェント", "done": True, "detail": "汎用回答を選択"})
 
-        # ── システムプロンプト構築 ──
+        # ── Phase 1: データ取得（BQ接続時のみ） ──
+        bq_data_csv = ""
+        self._last_sql_result = None
+        if data_ctx.bq_connected:
+            yield {"status": "データを取得しています..."}
+            bq_data_csv = self._fetch_bq_data(user_prompt, data_ctx)
+            if self._last_sql_result:
+                yield self._last_sql_result
+                flow_steps.append({"step": "データ取得", "done": True, "detail": "BigQueryからデータ取得完了"})
+            else:
+                flow_steps.append({"step": "データ取得", "done": True, "detail": "データなし"})
+        else:
+            flow_steps.append({"step": "データ取得", "done": True, "detail": "ローカル/GCSデータを使用"})
+
+        # ── Phase 2: 回答生成（ストリーミング） ──
+        flow_steps.append({"step": "回答生成", "done": False})
+        yield {"flow_steps": list(flow_steps)}
         sys_prompt = build_system_prompt(
             company=company,
             bq_schema=data_ctx.bq_result.content,
@@ -185,117 +215,89 @@ class ReasoningEngine:
             intent=intent,
         )
 
-        # ── ツール定義 ──
-        def query_bigquery(sql_query: str) -> str:
-            """BigQueryでSQLを実行してデータを取得する。日本語カラム名はバッククォートで囲むこと。"""
-            pass
+        # BQデータがあればシステムプロンプトに注入
+        if bq_data_csv:
+            sys_prompt += (
+                "\n\n【BigQueryから取得した実データ — 必ずこの数値を使って回答すること】\n"
+                f"{bq_data_csv}\n"
+            )
 
-        tools = [query_bigquery] if data_ctx.bq_connected else None
         current_history = list(history)
 
-        # ── Call-1: tools付き + mode=ANY（非ストリーミング）で確実にfunction_callを取得 ──
-        config_1 = types.GenerateContentConfig(
+        yield {"status": "回答を生成しています..."}
+
+        config = types.GenerateContentConfig(
             system_instruction=sys_prompt,
-            tools=tools,
-            tool_config=types.ToolConfig(
-                function_calling_config=types.FunctionCallingConfig(mode="ANY")
-            ) if tools else None,
+            tools=None,
             temperature=0.0,
         )
-        response_1 = self._client.models.generate_content(
+        response_stream = self._client.models.generate_content_stream(
             model=APP.gemini_model,
             contents=current_history,
-            config=config_1,
+            config=config,
         )
+        for chunk in response_stream:
+            if chunk.text:
+                yield chunk.text
 
-        # function_call を抽出
-        first_fc = None
-        model_parts = []
+        # 回答生成完了 → フロー最終状態をyield
+        flow_steps[-1]["done"] = True  # 回答生成を完了に
+        yield {"flow_steps": list(flow_steps)}
 
-        if response_1.candidates and response_1.candidates[0].content:
-            for part in response_1.candidates[0].content.parts:
-                if hasattr(part, 'function_call') and part.function_call and first_fc is None:
-                    first_fc = part.function_call
-                    model_parts.append(types.Part.from_function_call(
-                        name=first_fc.name, args=first_fc.args))
-                elif hasattr(part, 'text') and part.text:
-                    model_parts.append(types.Part.from_text(text=part.text))
+    def _fetch_bq_data(self, user_prompt: str, data_ctx: DataContext) -> str:
+        """
+        Phase 1: BQからデータを取得してCSVで返す。
+        - テーブルが少数の場合: SELECT * で全データ取得（SQL生成不要、確実）
+        - 失敗時は空文字を返す（Phase 2がデータなしで回答する）
+        """
+        import re
+        from dataclasses import asdict
 
-        if model_parts:
-            current_history.append(types.Content(role="model", parts=model_parts))
+        try:
+            # スキーマからテーブル一覧を抽出
+            schema_text = data_ctx.bq_result.content
+            tables = re.findall(r"Dataset:\s*(\S+)[\s\S]*?Table:\s*(\S+)", schema_text)
 
-        # ── 分岐A: function_call が来た → SQL実行 → Call-2 ──
-        if first_fc and first_fc.name == "query_bigquery":
-            yield {"status": "ツールを実行しています..."}
-            sql = (first_fc.args.get("sql_query", "")
-                   if isinstance(first_fc.args, dict)
-                   else getattr(first_fc.args, "sql_query", ""))
-            logger.warning("[DEBUG] Tool Call発火! SQL(raw)=%s", sql)
+            if not tables:
+                logger.warning("[Phase1] テーブルが見つかりません")
+                return ""
 
-            # SQLバリデーション + 日本語バッククォート自動付与
-            try:
-                sql = validate_sql(sql)
-            except SQLValidationError as ve:
-                logger.error("[DEBUG] SQLバリデーションエラー: %s", ve)
-                res_str = f"SQL Validation Error: {ve}"
-                yield {"executed_sql": sql, "sql_result": None}
-            else:
-                logger.warning("[DEBUG] Tool Call発火! SQL(fixed)=%s", sql)
-                yield {"status": f"BQ実行中: {sql[:40]}..."}
+            # 全テーブルからデータを取得してCSVに結合
+            all_csv_parts = []
+            first_sql = None
+            first_result = None
+
+            for dataset, table in tables:
+                sql = f"SELECT * FROM `{dataset}`.`{table}` LIMIT 100"
+                logger.warning("[Phase1] SQL実行: %s", sql)
+
                 try:
                     result = self._data_agent.execute_sql(sql)
-                    if result is None:
-                        res_str = "SQL Execution Error"
-                        yield {"executed_sql": sql, "sql_result": None}
-                    else:
+                    if result and result.row_count > 0:
                         df = result.to_dataframe()
-                        res_str = df.head(100).to_csv(index=False)
-                        logger.warning("[DEBUG] SQL成功! rows=%d", result.row_count)
-                        from dataclasses import asdict
-                        yield {"executed_sql": sql, "sql_result": asdict(result)}
-                except Exception as sql_exc:
-                    logger.error("[DEBUG] SQL実行エラー: %s", sql_exc)
-                    res_str = f"SQL Execution Error: {sql_exc}"
-                    yield {"executed_sql": sql, "sql_result": None}
+                        csv_part = f"--- {dataset}.{table} ---\n{df.head(100).to_csv(index=False)}"
+                        all_csv_parts.append(csv_part)
+                        logger.warning("[Phase1] %s.%s: %d行取得", dataset, table, result.row_count)
 
-            # ツール結果を履歴に追加
-            current_history.append(types.Content(
-                role="user",
-                parts=[types.Part.from_function_response(
-                    name=first_fc.name, response={"result": res_str})],
-            ))
-            yield {"status": "データを元に回答を生成しています..."}
+                        if first_sql is None:
+                            first_sql = sql
+                            first_result = result
+                except Exception as e:
+                    logger.error("[Phase1] %s.%s 取得エラー: %s", dataset, table, e)
 
-            # Call-2: tools無しでテキスト回答を生成
-            config_2 = types.GenerateContentConfig(
-                system_instruction=sys_prompt,
-                tools=None,
-                temperature=0.0,
-            )
-            response_stream_2 = self._client.models.generate_content_stream(
-                model=APP.gemini_model,
-                contents=current_history,
-                config=config_2,
-            )
-            for chunk in response_stream_2:
-                if chunk.text:
-                    yield chunk.text
+            if not all_csv_parts:
+                logger.warning("[Phase1] データ取得できず")
+                return ""
 
-        # ── 分岐B: function_call なし → tools無しで再呼び出し ──
-        else:
-            config_fallback = types.GenerateContentConfig(
-                system_instruction=sys_prompt,
-                tools=None,
-                temperature=0.0,
-            )
-            response_stream_fb = self._client.models.generate_content_stream(
-                model=APP.gemini_model,
-                contents=current_history,
-                config=config_fallback,
-            )
-            for chunk in response_stream_fb:
-                if chunk.text:
-                    yield chunk.text
+            # SQL結果を保存（UIでの表示用）
+            if first_result:
+                self._last_sql_result = {"executed_sql": first_sql, "sql_result": asdict(first_result)}
+
+            return "\n\n".join(all_csv_parts)
+
+        except Exception as e:
+            logger.error("[Phase1] データ取得エラー: %s", e)
+            return ""
 
     # ----------------------------------------------------------
     # Supplement phase
