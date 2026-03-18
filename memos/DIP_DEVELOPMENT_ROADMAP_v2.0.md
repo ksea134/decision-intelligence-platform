@@ -39,7 +39,7 @@
 | 2 | Memory Store統合 | 1週間 | ⏭️ スキップ | 当面インメモリで運用。コスト削減のため延期 |
 | 3 | Vertex AI Search統合 | 2週間 | ✅ 完了 | Vertex AI Search、v3.6.1-stable |
 | 4A | Agent Builder基盤 | 2週間 | ✅ 完了 | ADK移行、v4.0.0-stable |
-| 4B | エコシステム連携 | 2週間 | ⬜ 未着手 | Model Garden / A2A / MCP |
+| 4B | エコシステム連携 | 2週間 | 🔶 一部完了 | Gemini Flash/Pro使い分け完了。Model Garden連携はPhase 5後 |
 | 5 | エンタープライズUI移行 | 3週間 | ⬜ 未着手 | Cloud Run + IAP |
 | 6 | Governance層実装 | 2週間 | ⬜ 未着手 | Dataplex |
 | 7 | Observability & FinOps | 2週間 | ⬜ 未着手 | Cloud Monitoring |

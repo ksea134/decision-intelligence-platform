@@ -145,10 +145,21 @@ v4では、Geminiに任せていた仕事（SQL生成、データ取得判断、
 | 監視 | ログファイル確認 | Cloud Monitoringダッシュボード |
 | モデル切替 | コード変更必要 | コンソールから切替可能 |
 
-### モデル使い分け（Phase 4B）
-- 汎用質問 → Gemini Flash（速い・安い）
-- 複雑な分析 → Gemini Pro（精度重視）
-- 高度な推論 → Claude Opus（最高精度）
+### モデル使い分け（Phase 4B — 実装済み）
+
+| エージェント | モデル | 理由 |
+|------------|--------|------|
+| ルーター | Gemini 2.5 Flash | 分類だけなので高速・低コスト |
+| 汎用回答 | Gemini 2.5 Flash | シンプルな質問は高速で十分 |
+| 要因分析 | Gemini 2.5 Pro | 5 Whys等の深い推論が必要 |
+| 比較分析 | Gemini 2.5 Pro | 多角的な分析が必要 |
+| 予測分析 | Gemini 2.5 Pro | シナリオ分析で精度が重要 |
+
+設定ファイル: `orchestration/adk/agent_definition.py`
+
+将来の拡張:
+- 高度な推論 → Claude Opus（Model Garden経由）
+- コード生成 → Claude Sonnet（Model Garden経由）
 
 ---
 
@@ -159,10 +170,21 @@ v4では、Geminiに任せていた仕事（SQL生成、データ取得判断、
 | 0 | 基盤準備・仕様策定 | 完了 |
 | 1 | Agent Router | 完了（V1統合済み） |
 | 2 | Memory Store統合 | スキップ（当面インメモリで運用） |
-| 3 | Vertex AI Search統合 | 実装済み |
-| 4A | Agent Builder基盤 | 未着手 |
-| 4B | エコシステム連携 | 未着手 |
+| 3 | Vertex AI Search統合 | 完了 |
+| 4A | Agent Builder基盤 | 完了（ADK統合済み） |
+| 4B | エコシステム連携 | 一部完了（Gemini Flash/Pro使い分け） |
 | 5 | エンタープライズUI移行 | 未着手 |
+| 4B追加 | Model Garden連携（Claude等） | 未着手（Phase 5の後に実施） |
 | 6 | Governance層実装 | 未着手 |
 | 7 | Observability & FinOps | 未着手 |
 | 8 | 高度機能（InlineViz等） | 未着手 |
+
+### 各Phaseの概要
+
+| Phase | 内容 | 今やるべきか |
+|-------|------|------------|
+| **5** | Cloud Run + IAP + Agent Engineデプロイ。Streamlitから脱却し、独自WebアプリでGCPコンソール管理可能に | エンタープライズ展開時。Agent Engineデプロイもここで実施 |
+| **4B追加** | Model Garden連携。Claude Opus/Sonnet等の外部モデルをVertex AI経由で利用。高度な推論タスクに活用 | Phase 5（Cloud Run）の後。GCPの認証基盤が使えるため |
+| **6** | Dataplex（データガバナンス）。複数企業データのセキュアな分離管理、監査証跡、機密データマスキング | 複数企業の本番運用時 |
+| **7** | Cloud Monitoring（監視・コスト管理）。レイテンシ、エラー率、トークン使用量、APIコスト可視化 | 本番運用時 |
+| **8** | InlineViz（文中チャート描画）。回答文の中にグラフや表を直接描画するUX向上機能 | いつでも着手可能。UX差別化要素 |

@@ -1199,12 +1199,6 @@ def _render_right_column(
         st.markdown(assets.prompt_text) if assets.prompt_text else st.info("設定なし")
 
     latest = next((m for m in reversed(memory.get_messages()) if m["role"] == "assistant"), None)
-    with st.expander("AI思考ロジック", expanded=True):
-        if latest and latest.get("thought_process"):
-            st.markdown(latest["thought_process"])
-        else:
-            st.info("回答の表示から数秒後に、思考ロジックが表示されます。")
-
     with st.expander("AI処理フロー", expanded=True):
         if latest and latest.get("flow_steps"):
             for step in latest["flow_steps"]:
@@ -1219,6 +1213,12 @@ def _render_right_column(
                 )
         else:
             st.info("質問を送信すると、処理フローが表示されます。")
+
+    with st.expander("AI思考ロジック", expanded=True):
+        if latest and latest.get("thought_process"):
+            st.markdown(latest["thought_process"])
+        else:
+            st.info("回答の表示から数秒後に、思考ロジックが表示されます。")
 
     st.markdown(
         "<div style='display:flex;align-items:center;gap:8px;margin:16px 0 10px 0;'>"
