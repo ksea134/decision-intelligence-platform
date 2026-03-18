@@ -13,6 +13,7 @@ from config.cloud_config import CloudConfig
 from domain.models import ChatMessage, MessageArtifacts, ParsedResponse, SQLResult
 from domain.prompt_builder import build_system_prompt
 from domain.response_parser import parse_llm_response
+from domain.sql_validator import validate_sql, SQLValidationError
 from orchestration.agents.data_agent import DataAgent, DataContext
 from orchestration.memory.session_memory import SessionMemory
 
@@ -216,7 +217,18 @@ class ReasoningEngine:
                 for fc in function_calls:
                     if fc.name == "query_bigquery":
                         sql = fc.args.get("sql_query", "") if isinstance(fc.args, dict) else getattr(fc.args, "sql_query", "")
-                        logger.warning("[DEBUG] Tool Call発火! SQL=%s", sql)
+                        logger.warning("[DEBUG] Tool Call発火! SQL(raw)=%s", sql)
+
+                        try:
+                            sql = validate_sql(sql)
+                        except SQLValidationError as ve:
+                            logger.error("[DEBUG] SQLバリデーションエラー: %s", ve)
+                            res_str = f"SQL Validation Error: {ve}"
+                            yield {"executed_sql": sql, "sql_result": None}
+                            tool_parts.append(types.Part.from_function_response(name=fc.name, response={"result": res_str}))
+                            continue
+
+                        logger.warning("[DEBUG] Tool Call発火! SQL(fixed)=%s", sql)
                         yield {"status": f"🗄️ BQ実行中: {sql[:20]}..."}
 
                         try:

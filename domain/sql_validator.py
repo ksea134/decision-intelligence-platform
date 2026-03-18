@@ -19,6 +19,73 @@ from __future__ import annotations
 import re
 from typing import Final
 
+# 日本語文字（CJK統合漢字・ひらがな・カタカナ）を含むトークンを検出する正規表現
+_CJK_TOKEN_RE = re.compile(
+    r"(?<!`)("                          # バッククォートの直後でない
+    r"[A-Za-z0-9_]*"                    # 先頭に英数字があってもよい
+    r"[\u3000-\u9FFF\uF900-\uFAFF]"     # 日本語文字を1文字以上含む
+    r"[A-Za-z0-9_\u3000-\u9FFF\uF900-\uFAFF]*"  # 続き
+    r")(?!`)"                           # バッククォートの直前でない
+)
+
+
+def auto_backtick_japanese(sql: str) -> str:
+    """
+    SQL中のバッククォートで囲まれていない日本語識別子を自動的に
+    バッククォートで囲む。
+
+    例: SUM(合計) → SUM(`合計`)
+        SELECT 月, A事業部門 → SELECT `月`, `A事業部門`
+
+    文字列リテラル（'...' / "..."）やバッククォート内はそのまま保持する。
+    """
+    # SQLをセグメントに分割: (テキスト, 保護対象) のペアで管理
+    segments: list[tuple[str, bool]] = []  # (text, is_protected)
+    i = 0
+    current: list[str] = []
+
+    while i < len(sql):
+        ch = sql[i]
+        # バッククォート: 中身は保護
+        if ch == '`':
+            if current:
+                segments.append(("".join(current), False))
+                current = []
+            j = i + 1
+            while j < len(sql) and sql[j] != '`':
+                j += 1
+            segments.append((sql[i:j + 1], True))
+            i = j + 1
+            continue
+        # 文字列リテラル: 中身は保護
+        if ch in ("'", '"'):
+            if current:
+                segments.append(("".join(current), False))
+                current = []
+            quote = ch
+            j = i + 1
+            while j < len(sql) and sql[j] != quote:
+                j += 1
+            segments.append((sql[i:j + 1], True))
+            i = j + 1
+            continue
+        current.append(ch)
+        i += 1
+
+    if current:
+        segments.append(("".join(current), False))
+
+    # 保護されていないセグメントのみ正規表現でバッククォート付与
+    result_parts: list[str] = []
+    for text, is_protected in segments:
+        if is_protected:
+            result_parts.append(text)
+        else:
+            result_parts.append(_CJK_TOKEN_RE.sub(r"`\1`", text))
+
+    return "".join(result_parts)
+
+
 SQL_DISALLOWED_KEYWORDS: Final[frozenset[str]] = frozenset({
     "INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "CREATE",
     "TRUNCATE", "REPLACE", "MERGE", "GRANT", "REVOKE",
@@ -82,5 +149,7 @@ def validate_sql(sql: str) -> str:
             in_double = not in_double
         elif ch == ";" and not in_single and not in_double:
             raise SQLValidationError("複数のSQL文は実行できません。")
+
+    normalized = auto_backtick_japanese(normalized)
 
     return normalized
