@@ -177,30 +177,19 @@ class ReasoningEngine:
             pass
 
         tools = [query_bigquery] if data_ctx.bq_connected else None
-        # BQ接続時は初回のみツール呼び出しを強制（ANY）し、確実にデータ取得させる
-        # 2回目以降（ツール結果を受け取った後）は自動判断（AUTO）に切り替える
-        if tools:
-            tool_config_forced = types.ToolConfig(
-                function_calling_config=types.FunctionCallingConfig(mode="ANY")
-            )
-            tool_config_auto = types.ToolConfig(
-                function_calling_config=types.FunctionCallingConfig(mode="AUTO")
-            )
-        else:
-            tool_config_forced = None
-            tool_config_auto = None
-
         config = types.GenerateContentConfig(
             system_instruction=sys_prompt,
             tools=tools,
-            tool_config=tool_config_forced,
+            tool_config=types.ToolConfig(
+                function_calling_config=types.FunctionCallingConfig(mode="ANY")
+            ) if tools else None,
             temperature=0.0,
         )
 
         current_history = list(history)
-        is_first_call = True
 
-        while True:
+        # ── Step 1: ツール強制(ANY)でGemini呼び出し → SQL1回だけ実行 ──
+        if tools:
             try:
                 response_stream = self._client.models.generate_content_stream(
                     model=APP.gemini_model,
@@ -211,73 +200,71 @@ class ReasoningEngine:
                 logger.error("Gemini API error: %s", e)
                 raise
 
-            function_calls = []
+            # ストリームから最初のfunction_callだけ取得
+            first_fc = None
             model_parts = []
-
             for chunk in response_stream:
-                if chunk.function_calls:
-                    function_calls.extend(chunk.function_calls)
-                    for fc in chunk.function_calls:
-                        model_parts.append(types.Part.from_function_call(name=fc.name, args=fc.args))
-                if chunk.text:
-                    model_parts.append(types.Part.from_text(text=chunk.text))
-                    yield chunk.text  # ベースプログラムと同じ: 文字列を直接yield
+                if chunk.function_calls and first_fc is None:
+                    first_fc = chunk.function_calls[0]
+                    model_parts.append(types.Part.from_function_call(name=first_fc.name, args=first_fc.args))
+                # function_call以外のテキストは無視（ANY時はテキスト不要）
 
             if model_parts:
                 current_history.append(types.Content(role="model", parts=model_parts))
 
-            if function_calls:
+            if first_fc and first_fc.name == "query_bigquery":
                 yield {"status": "⚙️ ツールを実行しています..."}
-                tool_parts = []
-                for fc in function_calls:
-                    if fc.name == "query_bigquery":
-                        sql = fc.args.get("sql_query", "") if isinstance(fc.args, dict) else getattr(fc.args, "sql_query", "")
-                        logger.warning("[DEBUG] Tool Call発火! SQL(raw)=%s", sql)
+                sql = first_fc.args.get("sql_query", "") if isinstance(first_fc.args, dict) else getattr(first_fc.args, "sql_query", "")
+                logger.warning("[DEBUG] Tool Call発火! SQL(raw)=%s", sql)
 
-                        try:
-                            sql = validate_sql(sql)
-                        except SQLValidationError as ve:
-                            logger.error("[DEBUG] SQLバリデーションエラー: %s", ve)
-                            res_str = f"SQL Validation Error: {ve}"
+                try:
+                    sql = validate_sql(sql)
+                except SQLValidationError as ve:
+                    logger.error("[DEBUG] SQLバリデーションエラー: %s", ve)
+                    res_str = f"SQL Validation Error: {ve}"
+                    yield {"executed_sql": sql, "sql_result": None}
+                else:
+                    logger.warning("[DEBUG] Tool Call発火! SQL(fixed)=%s", sql)
+                    yield {"status": f"🗄️ BQ実行中: {sql[:20]}..."}
+                    try:
+                        result = self._data_agent.execute_sql(sql)
+                        if result is None:
+                            res_str = "SQL Execution Error"
                             yield {"executed_sql": sql, "sql_result": None}
-                            tool_parts.append(types.Part.from_function_response(name=fc.name, response={"result": res_str}))
-                            continue
+                        else:
+                            df = result.to_dataframe()
+                            res_str = df.head(100).to_csv(index=False)
+                            logger.warning("[DEBUG] SQL成功! rows=%d, csv=%s", result.row_count, res_str[:200])
+                            from dataclasses import asdict
+                            yield {"executed_sql": sql, "sql_result": asdict(result)}
+                    except Exception as sql_exc:
+                        logger.error("[DEBUG] SQL実行エラー: %s", sql_exc)
+                        res_str = f"SQL Execution Error: {sql_exc}"
+                        yield {"executed_sql": sql, "sql_result": None}
 
-                        logger.warning("[DEBUG] Tool Call発火! SQL(fixed)=%s", sql)
-                        yield {"status": f"🗄️ BQ実行中: {sql[:20]}..."}
-
-                        try:
-                            result = self._data_agent.execute_sql(sql)
-                            if result is None:
-                                logger.warning("[DEBUG] execute_sql returned None")
-                                res_str = "SQL Execution Error"
-                                yield {"executed_sql": sql, "sql_result": None}
-                            else:
-                                df = result.to_dataframe()
-                                res_str = df.head(100).to_csv(index=False)
-                                logger.warning("[DEBUG] SQL成功! rows=%d, csv=%s", result.row_count, res_str[:200])
-                                from dataclasses import asdict
-                                yield {"executed_sql": sql, "sql_result": asdict(result)}
-                        except Exception as sql_exc:
-                            logger.error("[DEBUG] SQL実行エラー: %s", sql_exc)
-                            res_str = f"SQL Execution Error: {sql_exc}"
-                            yield {"executed_sql": sql, "sql_result": None}
-
-                        tool_parts.append(types.Part.from_function_response(name=fc.name, response={"result": res_str}))
-
+                tool_parts = [types.Part.from_function_response(name=first_fc.name, response={"result": res_str})]
                 current_history.append(types.Content(role="user", parts=tool_parts))
                 yield {"status": "✍️ データを元に回答を生成しています..."}
-                # ツール結果を渡した後はAUTOに切り替え（テキスト回答を許可）
-                if is_first_call and tool_config_auto:
-                    config = types.GenerateContentConfig(
-                        system_instruction=sys_prompt,
-                        tools=tools,
-                        tool_config=tool_config_auto,
-                        temperature=0.0,
-                    )
-                    is_first_call = False
-            else:
-                break
+
+        # ── Step 2: ツール無効でテキスト回答を生成（1回だけ） ──
+        config_text = types.GenerateContentConfig(
+            system_instruction=sys_prompt,
+            tools=None,
+            temperature=0.0,
+        )
+        try:
+            response_stream = self._client.models.generate_content_stream(
+                model=APP.gemini_model,
+                contents=current_history,
+                config=config_text,
+            )
+        except Exception as e:
+            logger.error("Gemini API error (text phase): %s", e)
+            raise
+
+        for chunk in response_stream:
+            if chunk.text:
+                yield chunk.text
 
     # ----------------------------------------------------------
     # Supplement phase
