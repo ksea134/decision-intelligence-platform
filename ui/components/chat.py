@@ -26,6 +26,7 @@ ui/components/chat.py — チャット画面コンポーネント
 from __future__ import annotations
 
 import base64
+import logging
 import time
 import re
 from concurrent.futures import ThreadPoolExecutor
@@ -44,6 +45,8 @@ from orchestration.memory.session_memory import SessionMemory
 from orchestration.reasoning_engine import ReasoningEngine
 from orchestration.reasoning_engine_v2 import ReasoningEngineV2
 from google import genai
+
+logger = logging.getLogger(__name__)
 
 # ============================================================
 # バージョン情報
