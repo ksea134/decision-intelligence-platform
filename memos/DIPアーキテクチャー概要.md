@@ -51,7 +51,7 @@ ReasoningEngine（V1 / stream_events v3.1）
 
 ---
 
-## Vertex AI Vector Search（Phase 3 — 次に実装予定）
+## Vertex AI Search（Phase 3 — 次に実装予定）
 
 ### 導入メリット — 顧客体験の向上
 - **過去の分析を活用**: 「売上が落ちた原因は？」と聞いたとき、前回の分析結果を踏まえて回答できる
@@ -60,9 +60,11 @@ ReasoningEngine（V1 / stream_events v3.1）
 - **新任者の支援**: 過去の分析結果にアクセスでき、引き継ぎコストが下がる
 
 ### 技術構成
-- Embedding: Vertex AI text-embedding-004
-- Index: Vector Search Index（768次元）
-- 検索: ANN（Approximate Nearest Neighbor）
+- データストア: Vertex AI Search のマネージドデータストア
+- 取り込み: ドキュメント自動取り込み（PDF/HTML/CSV/テキスト対応）
+- Embedding・チャンク分割・インデックス管理: すべて自動
+- 検索: セマンティック検索 + フィルタ + ランキング
+- Agent Builder連携: 組み込み済み（Phase 4Aで活用）
 
 ---
 
@@ -93,7 +95,7 @@ ReasoningEngine（V1 / stream_events v3.1）
 | 0 | 基盤準備・仕様策定 | 完了 |
 | 1 | Agent Router | 完了（V1統合済み） |
 | 2 | Memory Store統合 | スキップ（当面インメモリで運用） |
-| 3 | Vector Search統合 | 次に実施予定 |
+| 3 | Vertex AI Search統合 | 次に実施予定 |
 | 4A | Agent Builder基盤 | 未着手 |
 | 4B | エコシステム連携 | 未着手 |
 | 5 | エンタープライズUI移行 | 未着手 |

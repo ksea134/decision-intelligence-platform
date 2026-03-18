@@ -37,7 +37,7 @@
 | 0 | 基盤準備・仕様策定 | 1週間 | ✅ 完了 | SPEC_v1.md作成 |
 | 1 | Agent Router | 1週間 | ✅ 完了 | LangGraph統合、v1.1.0-phase1、V1統合済み |
 | 2 | Memory Store統合 | 1週間 | ⏭️ スキップ | 当面インメモリで運用。コスト削減のため延期 |
-| 3 | Vector Search統合 | 2週間 | 🔄 進行中 | Vertex AI Vector Search |
+| 3 | Vertex AI Search統合 | 2週間 | 🔄 進行中 | Vertex AI Search |
 | 4A | Agent Builder基盤 | 2週間 | ⬜ 未着手 | ADK移行 |
 | 4B | エコシステム連携 | 2週間 | ⬜ 未着手 | Model Garden / A2A / MCP |
 | 5 | エンタープライズUI移行 | 3週間 | ⬜ 未着手 | Cloud Run + IAP |
@@ -69,7 +69,7 @@
 │                       │     Builder            │ ・FinOps/Cost Mgmt    │
 │                       │   └ Reasoning Engine   │                       │
 │                       │   └ Memory Store       │                       │
-│                       │   └ Vector Search      │                       │
+│                       │   └ Vertex AI Search      │                       │
 │                       │                        │                       │
 │                       │  Model層               │                       │
 │                       │   └ Gemini 2.5 Pro     │                       │
@@ -144,7 +144,7 @@ dip/
 │   ├── bigquery_service.py             # BigQuery接続
 │   ├── gcs_service.py                  # GCS接続
 │   ├── file_loader.py                  # ローカルファイル読込
-│   ├── vector_search_client.py         # Vector Search（Phase 3）
+│   ├── vector_search_client.py         # Vertex AI Search（Phase 3）
 │   └── _smart_card_defaults.py         # スマートカードデフォルト
 │
 ├── tests/
@@ -209,7 +209,7 @@ dip/
 | 開発方針 | 新規ファイル構成（並行開発） | 既存動作を維持しつつ移行 |
 | Reasoning Engine | LangGraph | Google Cloud推奨 |
 | 短期記憶 | Redis Memorystore | スケーラブル、DIパターン |
-| 長期記憶 | Vertex AI Vector Search | 類似検索、GCP統合 |
+| 長期記憶 | Vertex AI Search | 類似検索、GCP統合 |
 | メインモデル | Gemini 2.5 Flash | コスト最適化 |
 | 複雑推論 | Gemini 2.5 Pro / Claude | タスク特化 |
 | UI | Streamlit → Cloud Run + IAP | エンタープライズ対応 |
@@ -433,10 +433,10 @@ class RedisMemoryBackend(MemoryBackend):
 
 ---
 
-## Phase 3: Vector Search統合 ⬜ 未着手
+## Phase 3: Vertex AI Search統合 ⬜ 未着手
 
 ### 概要
-Vertex AI Vector Searchを導入し、過去の質問・回答を長期記憶として保持。類似事例の検索により回答精度を向上させる。
+Vertex AI Searchを導入し、過去の質問・回答を長期記憶として保持。類似事例の検索により回答精度を向上させる。
 
 ### 開発理由
 - 過去の意思決定事例を活用した回答生成
@@ -449,7 +449,7 @@ Vertex AI Vector Searchを導入し、過去の質問・回答を長期記憶と
 | 機能 | 説明 | 技術要素 |
 |------|------|----------|
 | **F3-1: Embedding生成** | 質問/回答をベクトル化 | Vertex AI text-embedding-004 |
-| **F3-2: Index作成** | ベクトルインデックスの構築 | Vector Search Index |
+| **F3-2: Index作成** | ベクトルインデックスの構築 | Vertex AI Search Index |
 | **F3-3: 類似検索** | 類似した過去事例の検索 | ANN (Approximate Nearest Neighbor) |
 | **F3-4: コンテキスト注入** | 検索結果をシステムプロンプトに注入 | build_system_instruction拡張 |
 | **F3-5: メタデータ管理** | 企業ID、日時、カテゴリ等の付与 | Filter対応 |
@@ -494,7 +494,7 @@ class VectorSearchService:
 ┌───────────────────────────────────────────┐
 │ Vertex AI                                 │
 │  ┌─────────────────────────────────────┐  │
-│  │ Vector Search                       │  │
+│  │ Vertex AI Search                       │  │
 │  │ - Index: dip-knowledge-index        │  │
 │  │ - Dimensions: 768                   │  │
 │  │ - Distance: DOT_PRODUCT_DISTANCE    │  │
@@ -902,7 +902,7 @@ Phase 0 ────────────────────────
               │                                                    │
               │                                                    └──► Phase 7 ►
               │
-              └──► Phase 3: Vector Search ──────────────────────────────────────►
+              └──► Phase 3: Vertex AI Search ──────────────────────────────────────►
                         │
                         └──► Phase 8: Advanced Features ────────────────────────►
 ```
@@ -913,13 +913,13 @@ Phase 0 ────────────────────────
 |-------|----------|------|
 | 1 | Phase 0完了 | アーキテクチャ確定後 |
 | 2 | Phase 1完了 | Agent Router上でMemory機能 |
-| 3 | Phase 1完了 | Vector Searchは独立して進行可能 |
+| 3 | Phase 1完了 | Vertex AI Searchは独立して進行可能 |
 | 4A | Phase 2完了 | Memory Store設計がAgent Engine統合に影響 |
 | 4B | Phase 4A完了 | Agent基盤がないとエコシステム連携不可 |
 | 5 | Phase 4B完了 | 全Agent機能が揃ってからUI構築 |
 | 6 | Phase 5完了 | UI経由でのデータアクセスパターンが確定後 |
 | 7 | Phase 6完了 | Governance下でのメトリクス収集が正確 |
-| 8 | Phase 3完了 | Vector Searchによる類似事例がInlineVizに必要 |
+| 8 | Phase 3完了 | Vertex AI Searchによる類似事例がInlineVizに必要 |
 
 ---
 
@@ -930,7 +930,7 @@ Phase 0 ────────────────────────
 | 0 | 基盤準備 ✅ | 1週間 | 1週間 |
 | 1 | Agent Router ✅ | 1週間 | 2週間 |
 | 2 | Memory Store 🔄 | 1週間 | 3週間 |
-| 3 | Vector Search | 2週間 | 5週間 |
+| 3 | Vertex AI Search | 2週間 | 5週間 |
 | 4A | Agent Builder基盤 | 2週間 | 7週間 |
 | 4B | エコシステム連携 | 2週間 | 9週間 |
 | 5 | Enterprise UI | 3週間 | 12週間 |
@@ -949,7 +949,7 @@ Phase 0 ────────────────────────
 | Gemini API仕様変更 | 高 | google-genai SDKの抽象化、バージョン固定 |
 | Redis Memorystore障害 | 中 | InMemoryBackendへのフォールバック実装 |
 | Agent Builder機能不足 | 中 | LangGraphとのハイブリッド構成維持 |
-| Vector Search遅延 | 低 | キャッシュ戦略、バッチ処理 |
+| Vertex AI Search遅延 | 低 | キャッシュ戦略、バッチ処理 |
 | コスト超過 | 中 | FinOps早期導入、Flash優先利用 |
 | Claude API クォータ制限 | 中 | Model Routerによるフォールバック |
 | A2Aプロトコル仕様変更 | 中 | バージョン固定、抽象化レイヤー |
