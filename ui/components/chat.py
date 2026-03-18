@@ -53,8 +53,11 @@ __version__ = "3.6.1"
 # ============================================================
 # Phase 1: Agent Router 設定
 # ============================================================
-# True: ReasoningEngineV2（Agent Router）を使用
-# False: ReasoningEngine（従来版）を使用
+# エンジン選択フラグ
+# USE_ADK_ENGINE = True: ADKベースのエージェント（Phase 4A）
+# USE_AGENT_ROUTER = True: V1 + Router分類（現行安定版）
+# 両方False: V1のみ（Router分類なし）
+USE_ADK_ENGINE = True
 USE_AGENT_ROUTER = True
 
 
@@ -208,16 +211,18 @@ def render_chat(selected_company: str, cfg: CloudConfig, base_dir: str) -> None:
     data_ctx = agent.fetch_all(base_dir)
     
     # ============================================================
-    # Router分類 + V1エンジン（安定版）
+    # エンジン選択
     # ============================================================
-    # Vertex AI Search クライアント
     from infra.vertex_ai_search import create_search_client
     search_client = create_search_client(project_id=cfg.project_id)
 
-    if USE_AGENT_ROUTER:
+    if USE_ADK_ENGINE:
+        from orchestration.adk.runner import ADKReasoningEngine
+        engine: EngineType = ADKReasoningEngine(client=client, data_agent=agent, memory=memory, search_client=search_client)
+    elif USE_AGENT_ROUTER:
         from orchestration.agents.router_agent import RouterAgent
         router = RouterAgent(client=client)
-        engine: EngineType = ReasoningEngine(client=client, data_agent=agent, memory=memory, router_agent=router, search_client=search_client)
+        engine = ReasoningEngine(client=client, data_agent=agent, memory=memory, router_agent=router, search_client=search_client)
     else:
         engine = ReasoningEngine(client=client, data_agent=agent, memory=memory, search_client=search_client)
 
