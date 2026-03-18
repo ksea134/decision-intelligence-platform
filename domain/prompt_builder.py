@@ -37,6 +37,7 @@ def build_system_prompt(
     structured: str,
     unstructured: str,
     bq_connected: bool,
+    intent: str | None = None,
 ) -> str:
     """
     Geminiに渡すシステムプロンプトを組み立てて返す。
@@ -57,6 +58,7 @@ def build_system_prompt(
     return (
         _build_persona(company)
         + _build_language_rules()
+        + _build_intent_section(intent)
         + _build_files_tag_instruction()
         + _build_sql_rules(bq_connected)
         + _build_knowledge_section(knowledge)
@@ -73,6 +75,58 @@ def _build_persona(company: str) -> str:
     return (
         f"あなたは{company}の意思決定を支援するトップコンサルタントです。\n\n"
     )
+
+
+def _build_intent_section(intent: str | None) -> str:
+    if not intent or intent == "general":
+        return ""
+
+    if intent == "analysis":
+        return (
+            "【分析フレームワーク — 要因分析モード】\n"
+            "この質問は「原因・要因の特定」を求めています。以下のフレームワークを適用してください。\n\n"
+            "■ 5 Whys（5つのなぜ）:\n"
+            "  問題の根本原因に到達するまで「なぜ？」を最低3回繰り返す。\n\n"
+            "■ 寄与度分析:\n"
+            "  各要因の影響度を%で推定。合計100%になるように配分。\n\n"
+            "■ 回答構成:\n"
+            "  1. 問題の定義（質問を明確な問題文に再定義）\n"
+            "  2. 主要因の特定（寄与度%付き）\n"
+            "  3. 根本原因分析（5 Whys）\n"
+            "  4. 推奨アクション（短期/中期/長期）\n\n"
+        )
+
+    if intent == "comparison":
+        return (
+            "【分析フレームワーク — 比較分析モード】\n"
+            "この質問は「複数対象の比較」を求めています。以下のフレームワークを適用してください。\n\n"
+            "■ 比較軸の設定:\n"
+            "  定量指標（売上、コスト、成長率等）と定性指標（品質、満足度等）の両面から比較。\n\n"
+            "■ 比較表の作成:\n"
+            "  3〜5つの主要軸で比較表を作成。差分（+/-）を明記。\n\n"
+            "■ 回答構成:\n"
+            "  1. 比較対象の定義（表形式）\n"
+            "  2. 比較表（数値・差分・優位を含む）\n"
+            "  3. 各対象の強み・弱み\n"
+            "  4. 総合評価と推奨事項\n\n"
+        )
+
+    if intent == "forecast":
+        return (
+            "【分析フレームワーク — 予測分析モード】\n"
+            "この質問は「将来の見通し・予測」を求めています。以下のフレームワークを適用してください。\n\n"
+            "■ 3シナリオ分析:\n"
+            "  楽観（15-25%）/ 基本（50-70%）/ 悲観（15-25%）の3パターンで予測。\n\n"
+            "■ 予測の根拠:\n"
+            "  過去データのトレンド、季節性、外部環境要因を考慮。\n\n"
+            "■ 回答構成:\n"
+            "  1. 予測の前提条件（期間、対象指標、基準値）\n"
+            "  2. シナリオ別予測（表形式: 予測値/成長率/確率）\n"
+            "  3. リスク要因と影響度\n"
+            "  4. 推奨アクション\n\n"
+        )
+
+    return ""
 
 
 def _build_language_rules() -> str:

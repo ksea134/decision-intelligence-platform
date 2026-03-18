@@ -55,7 +55,7 @@ __version__ = "2.2.2"
 # ============================================================
 # True: ReasoningEngineV2（Agent Router）を使用
 # False: ReasoningEngine（従来版）を使用
-USE_AGENT_ROUTER = False
+USE_AGENT_ROUTER = True
 
 
 # ============================================================
@@ -208,16 +208,12 @@ def render_chat(selected_company: str, cfg: CloudConfig, base_dir: str) -> None:
     data_ctx = agent.fetch_all(base_dir)
     
     # ============================================================
-    # Phase 1: Agent Router の有効/無効を切り替え
+    # Router分類 + V1エンジン（安定版）
     # ============================================================
     if USE_AGENT_ROUTER:
-        engine: EngineType = ReasoningEngineV2(
-            client=client,
-            data_agent=agent,
-            memory=memory,
-            use_llm_router=True,   # LLM ベースの意図分類を使用
-            use_llm_agents=True,   # LLM ベースのエージェントを使用
-        )
+        from orchestration.agents.router_agent import RouterAgent
+        router = RouterAgent(client=client)
+        engine: EngineType = ReasoningEngine(client=client, data_agent=agent, memory=memory, router_agent=router)
     else:
         engine = ReasoningEngine(client=client, data_agent=agent, memory=memory)
 
@@ -445,7 +441,13 @@ def _execute_main_phase(
 
                         # dictイベント（旧形式の互換性）
                         elif isinstance(token, dict):
-                            if "status" in token:
+                            if "agent_type" in token:
+                                # Router分類結果
+                                out_data["agent_type"] = token["agent_type"]
+                                out_data["agent_confidence"] = token.get("confidence", 0)
+                                if "status" in token:
+                                    current_status = token["status"]
+                            elif "status" in token:
                                 current_status = token["status"]
                                 # Tool Call発火時: それまでのテキストをクリア
                                 if "ツールを実行" in token["status"] or "BQ実行中" in token["status"]:

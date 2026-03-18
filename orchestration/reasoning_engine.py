@@ -56,10 +56,11 @@ class ReasoningEngine:
     No Streamlit dependency. All UI concerns are handled by the caller.
     """
 
-    def __init__(self, client: genai.Client, data_agent: DataAgent, memory: SessionMemory) -> None:
+    def __init__(self, client: genai.Client, data_agent: DataAgent, memory: SessionMemory, router_agent=None) -> None:
         self._client = client
         self._data_agent = data_agent
         self._memory = memory
+        self._router_agent = router_agent
 
     # ----------------------------------------------------------
     # Main entry point
@@ -154,9 +155,24 @@ class ReasoningEngine:
             raise ValueError(f"user_prompt cannot be empty: {repr(user_prompt)}")
         
         history = self._memory.build_gemini_history(user_prompt)
-        
+
         logger.info("stream_events: history has %d items, user_prompt=%s...", len(history), user_prompt[:50])
-        
+
+        # Router分類（利用可能な場合のみ）
+        intent = None
+        if self._router_agent:
+            try:
+                classification = self._router_agent.classify(user_prompt)
+                intent = classification.get("intent", "general")
+                confidence = classification.get("confidence", 0.0)
+                reasoning = classification.get("reasoning", "")
+                logger.info("[Router] intent=%s, confidence=%.2f, reasoning=%s", intent, confidence, reasoning)
+                agent_labels = {"analysis": "要因分析", "comparison": "比較分析", "forecast": "予測分析", "general": "汎用回答"}
+                yield {"agent_type": intent, "confidence": confidence, "status": f"🧠 {agent_labels.get(intent, intent)}モード"}
+            except Exception as e:
+                logger.warning("[Router] Classification failed, continuing without: %s", e)
+                intent = None
+
         sys_prompt = build_system_prompt(
             company=company,
             bq_schema=data_ctx.bq_result.content,
@@ -166,6 +182,7 @@ class ReasoningEngine:
             structured=data_ctx.assets.structured_text,
             unstructured=data_ctx.assets.unstructured_text,
             bq_connected=data_ctx.bq_connected,
+            intent=intent,
         )
         logger.warning("[DEBUG] bq_connected=%s, has_必須アクション=%s",
                        data_ctx.bq_connected, "必須アクション" in sys_prompt)
