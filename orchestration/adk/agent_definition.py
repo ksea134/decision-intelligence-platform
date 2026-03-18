@@ -24,9 +24,11 @@ from orchestration.adk.tools import query_bigquery, search_past_qa
 logger = logging.getLogger(__name__)
 
 # ============================================================
-# モデル設定
+# モデル設定 — エージェントごとに最適なモデルを選択
 # ============================================================
-MODEL = "gemini-2.5-flash"
+MODEL_ROUTER  = "gemini-2.5-flash"   # ルーター: 高速・低コスト（分類のみ）
+MODEL_FAST    = "gemini-2.5-flash"   # 汎用回答: 高速・低コスト
+MODEL_DEEP    = "gemini-2.5-pro"     # 分析・比較・予測: 高精度・深い推論
 
 
 # ============================================================
@@ -35,7 +37,7 @@ MODEL = "gemini-2.5-flash"
 
 analysis_agent = LlmAgent(
     name="analysis_agent",
-    model=MODEL,
+    model=MODEL_DEEP,
     instruction=(
         "あなたは要因分析の専門家です。\n"
         "ユーザーの質問に対して、以下のフレームワークを適用して回答してください。\n\n"
@@ -56,7 +58,7 @@ analysis_agent = LlmAgent(
 
 comparison_agent = LlmAgent(
     name="comparison_agent",
-    model=MODEL,
+    model=MODEL_DEEP,
     instruction=(
         "あなたは比較分析の専門家です。\n"
         "ユーザーの質問に対して、以下のフレームワークを適用して回答してください。\n\n"
@@ -77,7 +79,7 @@ comparison_agent = LlmAgent(
 
 forecast_agent = LlmAgent(
     name="forecast_agent",
-    model=MODEL,
+    model=MODEL_DEEP,
     instruction=(
         "あなたは予測分析の専門家です。\n"
         "ユーザーの質問に対して、以下のフレームワークを適用して回答してください。\n\n"
@@ -98,7 +100,7 @@ forecast_agent = LlmAgent(
 
 general_agent = LlmAgent(
     name="general_agent",
-    model=MODEL,
+    model=MODEL_FAST,
     instruction=(
         "あなたは意思決定を支援するトップコンサルタントです。\n"
         "ユーザーの質問に対して、的確で分かりやすい回答を提供してください。\n\n"
@@ -120,7 +122,7 @@ general_agent = LlmAgent(
 
 root_agent = LlmAgent(
     name="dip_root_agent",
-    model=MODEL,
+    model=MODEL_ROUTER,
     instruction=(
         "あなたはDIP（Decision Intelligence Platform）のルーターエージェントです。\n"
         "ユーザーの質問を分析し、最も適切な専門エージェントに委譲してください。\n\n"

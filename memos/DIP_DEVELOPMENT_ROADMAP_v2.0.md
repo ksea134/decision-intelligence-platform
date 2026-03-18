@@ -38,7 +38,7 @@
 | 1 | Agent Router | 1週間 | ✅ 完了 | LangGraph統合、v1.1.0-phase1、V1統合済み |
 | 2 | Memory Store統合 | 1週間 | ⏭️ スキップ | 当面インメモリで運用。コスト削減のため延期 |
 | 3 | Vertex AI Search統合 | 2週間 | ✅ 完了 | Vertex AI Search、v3.6.1-stable |
-| 4A | Agent Builder基盤 | 2週間 | ⬜ 未着手 | ADK移行 |
+| 4A | Agent Builder基盤 | 2週間 | ✅ 完了 | ADK移行、v4.0.0-stable |
 | 4B | エコシステム連携 | 2週間 | ⬜ 未着手 | Model Garden / A2A / MCP |
 | 5 | エンタープライズUI移行 | 3週間 | ⬜ 未着手 | Cloud Run + IAP |
 | 6 | Governance層実装 | 2週間 | ⬜ 未着手 | Dataplex |

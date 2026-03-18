@@ -132,9 +132,19 @@ class ADKReasoningEngine:
                         "general_agent": "汎用回答",
                         "dip_root_agent": "ルーター",
                     }
+                    agent_models = {
+                        "analysis_agent": "Gemini 2.5 Pro",
+                        "comparison_agent": "Gemini 2.5 Pro",
+                        "forecast_agent": "Gemini 2.5 Pro",
+                        "general_agent": "Gemini 2.5 Flash",
+                        "dip_root_agent": "Gemini 2.5 Flash",
+                    }
                     label = agent_labels.get(event.author, event.author)
-                    if event.author != "dip_root_agent":
-                        flow_steps.append({"step": f"{label}エージェント", "done": True})
+                    model = agent_models.get(event.author, "")
+                    if event.author == "dip_root_agent":
+                        flow_steps.append({"step": "ルートエージェント", "done": True, "detail": model})
+                    else:
+                        flow_steps.append({"step": f"{label}エージェント", "done": True, "detail": model})
                         yield {"agent_type": event.author, "confidence": 0.9, "status": f"{label}モード"}
 
                 # テキスト応答を取得
