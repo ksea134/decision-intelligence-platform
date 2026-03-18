@@ -19,6 +19,8 @@ import time
 import uuid
 from typing import Any
 
+import streamlit as st
+
 logger = logging.getLogger(__name__)
 
 # Discovery Engine SDK
@@ -210,9 +212,10 @@ class VertexAISearchClient:
             return []
 
 
+@st.cache_resource(show_spinner=False)
 def create_search_client(
     project_id: str,
     data_store_id: str = "dip-knowledge-store",
 ) -> VertexAISearchClient:
-    """ファクトリ関数"""
+    """ファクトリ関数（cache_resource で再起動以外はキャッシュ）"""
     return VertexAISearchClient(project_id=project_id, data_store_id=data_store_id)

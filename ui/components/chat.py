@@ -208,8 +208,9 @@ def render_chat(selected_company: str, cfg: CloudConfig, base_dir: str) -> None:
 
     client  = _get_client()
     agent   = DataAgent(cfg)
-    data_ctx = agent.fetch_all(base_dir)
-    
+    with st.spinner("データを準備しています…"):
+        data_ctx = agent.fetch_all(base_dir)
+
     # ============================================================
     # エンジン選択
     # ============================================================
@@ -217,8 +218,12 @@ def render_chat(selected_company: str, cfg: CloudConfig, base_dir: str) -> None:
     search_client = create_search_client(project_id=cfg.project_id)
 
     if USE_ADK_ENGINE:
-        from orchestration.adk.runner import ADKReasoningEngine
-        engine: EngineType = ADKReasoningEngine(client=client, data_agent=agent, memory=memory, search_client=search_client)
+        try:
+            from orchestration.adk.runner import ADKReasoningEngine
+            engine: EngineType = ADKReasoningEngine(client=client, data_agent=agent, memory=memory, search_client=search_client)
+        except ImportError:
+            logger.warning("google-adk not installed — falling back to ReasoningEngine")
+            engine = ReasoningEngine(client=client, data_agent=agent, memory=memory, search_client=search_client)
     elif USE_AGENT_ROUTER:
         from orchestration.agents.router_agent import RouterAgent
         router = RouterAgent(client=client)
