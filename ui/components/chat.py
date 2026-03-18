@@ -268,6 +268,9 @@ def _render_left_column(
             else:
                 _render_assistant_message(index, msg, data_ctx, selected_company)
 
+    # 補足フェーズのステータス表示用プレースホルダー（最新回答の直後に配置）
+    supplement_status_placeholder = st.empty()
+
     # pending_prompt の処理（メッセージ履歴の後に描画することで正しい順序を維持）
     if "pending_prompt" in st.session_state:
         pending_prompt  = st.session_state.pop("pending_prompt")
@@ -313,7 +316,7 @@ def _render_left_column(
 
     # 補足フェーズの実行（メイン回答後の rerun で到達する）
     if st.session_state.get("pending_supplement"):
-        _execute_supplement_phase(engine=engine, memory=memory, data_ctx=data_ctx, selected_company=selected_company)
+        _execute_supplement_phase(engine=engine, memory=memory, data_ctx=data_ctx, selected_company=selected_company, status_placeholder=supplement_status_placeholder)
 
     # 【修正】深掘り質問生成（ボタンクリック時のみ実行）
     if st.session_state.get("pending_deepdive"):
@@ -649,6 +652,7 @@ def _execute_supplement_phase(
     memory: SessionMemory,
     data_ctx: DataContext,
     selected_company: str,
+    status_placeholder: Any = None,
 ) -> None:
     """
     pending_supplement が存在するときのみ実行される。
@@ -672,7 +676,7 @@ def _execute_supplement_phase(
         st.session_state.pop("pending_supplement", None)
         return
 
-    status_box = st.empty()
+    status_box = status_placeholder if status_placeholder else st.empty()
     phase_start = time.time()
     timestamp = time.strftime("%Y%m%d-%H%M")
 
@@ -835,11 +839,11 @@ def _render_assistant_message(
         # BQ 実行ログ
         _render_sql_log(message)
 
-        # アクションボタン（コピー・テキストDL・PDF・深掘り）
-        _render_action_buttons(index, message, selected_company)
-
         # インフォグラフィック
         _render_infographic(index)
+
+        # アクションボタン（コピー・テキストDL・PDF・深掘り）
+        _render_action_buttons(index, message, selected_company)
 
     except Exception as exc:
         st.error("表示エラー: " + str(exc))
