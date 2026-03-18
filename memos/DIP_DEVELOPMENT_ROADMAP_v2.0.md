@@ -35,9 +35,9 @@
 | Phase | 名称 | 期間 | ステータス | 備考 |
 |-------|------|------|-----------|------|
 | 0 | 基盤準備・仕様策定 | 1週間 | ✅ 完了 | SPEC_v1.md作成 |
-| 1 | Agent Router | 1週間 | ✅ 完了 | LangGraph統合、v1.1.0-phase1 |
-| 2 | Memory Store統合 | 1週間 | 🔄 進行中 | Redis Memorystore |
-| 3 | Vector Search統合 | 2週間 | ⬜ 未着手 | Vertex AI Vector Search |
+| 1 | Agent Router | 1週間 | ✅ 完了 | LangGraph統合、v1.1.0-phase1、V1統合済み |
+| 2 | Memory Store統合 | 1週間 | ⏭️ スキップ | 当面インメモリで運用。コスト削減のため延期 |
+| 3 | Vector Search統合 | 2週間 | 🔄 進行中 | Vertex AI Vector Search |
 | 4A | Agent Builder基盤 | 2週間 | ⬜ 未着手 | ADK移行 |
 | 4B | エコシステム連携 | 2週間 | ⬜ 未着手 | Model Garden / A2A / MCP |
 | 5 | エンタープライズUI移行 | 3週間 | ⬜ 未着手 | Cloud Run + IAP |
@@ -315,7 +315,7 @@ git push origin v1.1.0-phase1
 
 ---
 
-## Phase 2: Memory Store統合 🔄 進行中
+## Phase 2: Memory Store統合 ⏭️ スキップ
 
 ### 概要
 短期記憶（会話履歴）をRedis Memorystoreで永続化し、セッション間での文脈維持を実現する。
@@ -429,7 +429,7 @@ class RedisMemoryBackend(MemoryBackend):
 - 期間: 1週間
 - 工数: 40時間
 
-### ステータス: 🔄 進行中
+### ステータス: ⏭️ スキップ（2026-03-18決定。当面インメモリで運用。コスト削減のため延期）
 
 ---
 
