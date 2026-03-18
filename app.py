@@ -12,9 +12,9 @@ from ui.components.chat import render_chat
 
 def main() -> None:
     st.set_page_config(
+        page_title="DIP | Decision Intelligence Platform",
+        page_icon="image/favicon.svg",
         layout="wide",
-        page_title=APP.title + " " + APP.version,
-        page_icon="👑",
     )
     st.session_state.setdefault("memory", None)
     st.session_state.setdefault("pending_prompt", None)

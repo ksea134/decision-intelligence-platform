@@ -48,7 +48,7 @@ from google import genai
 # ============================================================
 # バージョン情報
 # ============================================================
-__version__ = "2.2.2"
+__version__ = "3.6.1"
 
 # ============================================================
 # Phase 1: Agent Router 設定
@@ -210,19 +210,29 @@ def render_chat(selected_company: str, cfg: CloudConfig, base_dir: str) -> None:
     # ============================================================
     # Router分類 + V1エンジン（安定版）
     # ============================================================
+    # Vertex AI Search クライアント
+    from infra.vertex_ai_search import create_search_client
+    search_client = create_search_client(project_id=cfg.project_id)
+
     if USE_AGENT_ROUTER:
         from orchestration.agents.router_agent import RouterAgent
         router = RouterAgent(client=client)
-        engine: EngineType = ReasoningEngine(client=client, data_agent=agent, memory=memory, router_agent=router)
+        engine: EngineType = ReasoningEngine(client=client, data_agent=agent, memory=memory, router_agent=router, search_client=search_client)
     else:
-        engine = ReasoningEngine(client=client, data_agent=agent, memory=memory)
+        engine = ReasoningEngine(client=client, data_agent=agent, memory=memory, search_client=search_client)
 
     # タイトル行
     title_col, btn_col = st.columns([10, 1.2])
     with title_col:
+        st.markdown(
+            "<div style='margin-bottom:-12px;background-color:transparent;'>"
+            "<span style='font-size:1.1rem;color:rgba(255,255,255,0.45);font-weight:400;letter-spacing:0.05em;'>"
+            "DIP | Decision Intelligence Platform</span></div>",
+            unsafe_allow_html=True,
+        )
         st.title(APP.title + " | " + selected_company)
     with btn_col:
-        st.markdown("<div style='margin-top:14px'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top:38px'></div>", unsafe_allow_html=True)
         if st.button("新規チャット", key="new_chat_btn", use_container_width=True, type="secondary"):
             memory.reset_chat()
             st.rerun()
@@ -517,6 +527,18 @@ def _execute_main_phase(
     if not is_smart_card:
         memory.add_question_history(selected_company, display)
     memory.sync()
+
+    # Vertex AI Search にQ&Aを自動保存（バックグラウンド、失敗しても無視）
+    try:
+        if engine._search_client and engine._search_client.is_ready() and parsed.display_text:
+            engine._search_client.store(
+                question=prompt,
+                answer=parsed.display_text[:2000],
+                company=selected_company,
+                intent=out_data.get("agent_type", "general"),
+            )
+    except Exception:
+        pass  # 保存失敗はチャット動作に影響させない
 
     assistant_index = len(memory.get_messages()) - 1
     st.session_state["pending_supplement"] = {

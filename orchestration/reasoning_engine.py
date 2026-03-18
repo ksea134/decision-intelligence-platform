@@ -56,11 +56,12 @@ class ReasoningEngine:
     No Streamlit dependency. All UI concerns are handled by the caller.
     """
 
-    def __init__(self, client: genai.Client, data_agent: DataAgent, memory: SessionMemory, router_agent=None) -> None:
+    def __init__(self, client: genai.Client, data_agent: DataAgent, memory: SessionMemory, router_agent=None, search_client=None) -> None:
         self._client = client
         self._data_agent = data_agent
         self._memory = memory
         self._router_agent = router_agent
+        self._search_client = search_client
 
     # ----------------------------------------------------------
     # Main entry point
@@ -170,8 +171,29 @@ class ReasoningEngine:
         agent_labels = {"analysis": "要因分析", "comparison": "比較分析", "forecast": "予測分析", "general": "汎用回答"}
         flow_steps = []
 
-        # ── Phase 0: 質問理解 + Router分類 ──
+        # ── Phase 0: 質問理解 + 過去事例検索 ──
         flow_steps.append({"step": "質問理解", "done": True})
+
+        past_qa_context = ""
+        if self._search_client and self._search_client.is_ready():
+            try:
+                similar_qas = self._search_client.search(query=user_prompt, company=company, top_k=3)
+                if similar_qas:
+                    parts = []
+                    for i, qa in enumerate(similar_qas, 1):
+                        parts.append(f"事例{i}:\n  質問: {qa.get('question', '')}\n  回答: {qa.get('answer', '')}")
+                    past_qa_context = "\n\n".join(parts)
+                    flow_steps.append({"step": "過去事例検索", "done": True, "detail": f"{len(similar_qas)}件の類似事例を発見"})
+                    logger.info("[Search] %d similar Q&As found", len(similar_qas))
+                else:
+                    flow_steps.append({"step": "過去事例検索", "done": True, "detail": "類似事例なし"})
+            except Exception as e:
+                logger.warning("[Search] Failed: %s", e)
+                flow_steps.append({"step": "過去事例検索", "done": True, "detail": "検索スキップ"})
+        else:
+            flow_steps.append({"step": "過去事例検索", "done": True, "detail": "未接続"})
+
+        # ── Phase 0.5: Router分類 ──
         intent = None
         if self._router_agent:
             try:
@@ -220,6 +242,13 @@ class ReasoningEngine:
             sys_prompt += (
                 "\n\n【BigQueryから取得した実データ — 必ずこの数値を使って回答すること】\n"
                 f"{bq_data_csv}\n"
+            )
+
+        # 過去事例があればシステムプロンプトに注入
+        if past_qa_context:
+            sys_prompt += (
+                "\n\n【過去の類似Q&A — 参考にして回答の一貫性を保つこと】\n"
+                f"{past_qa_context}\n"
             )
 
         current_history = list(history)
