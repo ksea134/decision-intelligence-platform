@@ -37,7 +37,7 @@
 | 0 | 基盤準備・仕様策定 | 1週間 | ✅ 完了 | SPEC_v1.md作成 |
 | 1 | Agent Router | 1週間 | ✅ 完了 | LangGraph統合、v1.1.0-phase1、V1統合済み |
 | 2 | Memory Store統合 | 1週間 | ⏭️ スキップ | 当面インメモリで運用。コスト削減のため延期 |
-| 3 | Vertex AI Search統合 | 2週間 | 🔄 進行中 | Vertex AI Search |
+| 3 | Vertex AI Search統合 | 2週間 | ✅ 完了 | Vertex AI Search、v3.6.1-stable |
 | 4A | Agent Builder基盤 | 2週間 | ⬜ 未着手 | ADK移行 |
 | 4B | エコシステム連携 | 2週間 | ⬜ 未着手 | Model Garden / A2A / MCP |
 | 5 | エンタープライズUI移行 | 3週間 | ⬜ 未着手 | Cloud Run + IAP |
@@ -433,7 +433,7 @@ class RedisMemoryBackend(MemoryBackend):
 
 ---
 
-## Phase 3: Vertex AI Search統合 ⬜ 未着手
+## Phase 3: Vertex AI Search統合 ✅ 完了
 
 ### 概要
 Vertex AI Searchを導入し、過去の質問・回答を長期記憶として保持。類似事例の検索により回答精度を向上させる。
@@ -513,7 +513,7 @@ class VectorSearchService:
 - 期間: 2週間
 - 工数: 80時間
 
-### ステータス: ⬜ 未着手
+### ステータス: ✅ 完了（2026-03-18、v3.6.1-stable）
 
 ---
 
