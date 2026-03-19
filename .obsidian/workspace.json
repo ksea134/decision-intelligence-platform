@@ -1,0 +1,221 @@
+{
+  "main": {
+    "id": "9560924195a42b4f",
+    "type": "split",
+    "children": [
+      {
+        "id": "4986b4ac5f62232a",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "26224fd3331acf78",
+            "type": "leaf",
+            "state": {
+              "type": "csv-lite-view",
+              "state": {
+                "file": "data/demo_factory02/structured/production_results.csv"
+              },
+              "icon": "table",
+              "title": "production_results"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "63be4dcc9c929b55",
+    "type": "split",
+    "children": [
+      {
+        "id": "25e2e2aa7176ce0a",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "32f72e6795d6fdb6",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "ファイルエクスプローラ"
+            }
+          },
+          {
+            "id": "6a0ea361db83deb6",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "検索"
+            }
+          },
+          {
+            "id": "f354c993b14dd7e7",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "ブックマーク"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "3e7c70903dc71381",
+    "type": "split",
+    "children": [
+      {
+        "id": "30ac30f29a07fc8f",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "0b8851634626e6b1",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "バックリンク"
+            }
+          },
+          {
+            "id": "ce803d93e5e751bb",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "アウトゴーイングリンク"
+            }
+          },
+          {
+            "id": "1b908f5568ac9944",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "タグ"
+            }
+          },
+          {
+            "id": "48b775440376d24f",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "すべてのプロパティ"
+            }
+          },
+          {
+            "id": "c5c33b9bfcd0c30d",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "アウトライン"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:クイックスイッチャーを開く": false,
+      "graph:グラフビューを開く": false,
+      "canvas:新規キャンバスを作成": false,
+      "daily-notes:今日のデイリーノートを開く": false,
+      "templates:テンプレートを挿入": false,
+      "command-palette:コマンドパレットを開く": false,
+      "bases:新規ベースを作成": false
+    }
+  },
+  "active": "32f72e6795d6fdb6",
+  "lastOpenFiles": [
+    "data/demo_factory02/unstructured/patrol_reports/2026-03-15_週次パトロール.txt",
+    "data/demo_factory02/unstructured/patrol_reports/2026-03-08_週次パトロール.txt",
+    "data/demo_factory02/unstructured/patrol_reports/2026-03-01_月次パトロール.txt",
+    "data/demo_factory02/unstructured/hiyari_reports/2026-03-18_溶接エリア_保護具未着用.txt",
+    "data/demo_factory02/unstructured/hiyari_reports/2026-03-16_Cライン_異音発生.txt",
+    "data/demo_factory02/unstructured/hiyari_reports/2026-03-14_Cライン_ロボット異常動作.txt",
+    "data/demo_factory02/unstructured/hiyari_reports/2026-03-12_溶接エリア_火花飛散.txt",
+    "data/demo_factory02/unstructured/customer_claims/2026-03-10_TOYOTA_溶接強度不足.txt",
+    "data/demo_factory02/unstructured/customer_claims/2026-02-20_TOYOTA_溶接不良.txt",
+    "data/demo_factory02/unstructured/customer_claims/2026-01-15_TOYOTA_溶接不良.txt",
+    "data/demo_factory02/unstructured/inspection_reports/2026-03-18_C-LINE_WLD-003.txt",
+    "memos/バージョン管理.md",
+    "memos/作業履歴と予定.md",
+    "memos/DIP開発ロードマップv2.1.md",
+    "memos/層別仕様_UI-UX層.md",
+    "data/demo_factory/smart_cards/notable.md",
+    "data/demo_factory/smart_cards/alert.md",
+    "data/demo_factory/smart_cards/recent.md",
+    "data/mazda/smart_cards/recent.md",
+    "data/mazda/smart_cards/notable.md",
+    "data/mazda/smart_cards/hint.md",
+    "data/mazda/smart_cards/alert.md",
+    "memos/開発ルール.md",
+    "data/mazda/smart_cards/kpi.md",
+    "memos/層別仕様_AI Ops＆Observability層.md",
+    "memos/層別仕様_Security＆Governance.md",
+    "memos/層別仕様_Security＆Governance層.md",
+    "memos/層別仕様_AI Ops＆Observability.md",
+    "memos/層別仕様_DataSource層.md",
+    "memos/層別仕様_AI Ops＆オブザーバビリティ.md",
+    "memos/層別仕様_セキュリティ＆ガバナンス.md",
+    "memos/AI Ops＆オブザーバビリティ要件.md",
+    "2026-03-19.md",
+    "memos/層別仕様_Ingestion層.md",
+    "memos/層別仕様_Storage層.md",
+    "memos/層別仕様_Governance層.md",
+    "無題のファイル.canvas"
+  ]
+}

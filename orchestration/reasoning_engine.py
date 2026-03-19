@@ -1,6 +1,7 @@
 from __future__ import annotations
 import json
 import logging
+import re
 import time
 from dataclasses import dataclass
 from typing import Any, Generator
@@ -267,6 +268,8 @@ class ReasoningEngine:
             tools=None,
             temperature=0.0,
         )
+        # ストリーミングで蓄積し、tool_codeブロックを確実に除去してからyield
+        _buffer = []
         response_stream = self._client.models.generate_content_stream(
             model=APP.gemini_model,
             contents=current_history,
@@ -274,7 +277,13 @@ class ReasoningEngine:
         )
         for chunk in response_stream:
             if chunk.text:
-                yield chunk.text
+                _buffer.append(chunk.text)
+        full_text = "".join(_buffer)
+        # tool_codeブロックを除去（チャンクまたぎ対策）
+        if "tool_code" in full_text:
+            full_text = re.sub(r"```tool_code.*?```", "", full_text, flags=re.DOTALL).strip()
+        if full_text:
+            yield full_text
 
         # 回答生成完了 → フロー最終状態をyield
         flow_steps[-1]["done"] = True  # 回答生成を完了に

@@ -300,10 +300,12 @@ def _render_left_column(
     data_ctx: DataContext,
     selected_company: str,
 ) -> None:
-    # メッセージが0件のときスマートカードを表示
-    if not memory.get_messages():
-        st.markdown("<span style='color:rgba(255,255,255,0.45);font-size:0.95rem;font-weight:400;letter-spacing:0.08em;'>DI Dashboard</span>", unsafe_allow_html=True)
-        _render_smart_cards(data_ctx.assets.smart_cards)
+    # メッセージが0件かつスマートカード実行中でないときスマートカードを表示
+    sc_area = st.empty()
+    if not memory.get_messages() and not st.session_state.get("_sc_running"):
+        with sc_area.container():
+            st.markdown("<span style='color:rgba(255,255,255,0.45);font-size:0.95rem;font-weight:400;letter-spacing:0.08em;'>DI Dashboard</span>", unsafe_allow_html=True)
+            _render_smart_cards(data_ctx.assets.smart_cards)
 
     # メッセージ履歴の描画
     for index, msg in enumerate(memory.get_messages()):
@@ -321,6 +323,7 @@ def _render_left_column(
         pending_prompt  = st.session_state.pop("pending_prompt")
         pending_display = st.session_state.pop("pending_display", None)
         pending_data_source = st.session_state.pop("pending_data_source", "all")
+        st.session_state.pop("_sc_running", None)
 
         if pending_prompt and str(pending_prompt).strip():
             display_text = pending_display if pending_display and str(pending_display).strip() else pending_prompt
@@ -451,7 +454,7 @@ def _render_smart_cards(cards: list[dict[str, Any]]) -> None:
         return
 
     COLS_PER_ROW = 5
-    TILE_HEIGHT = 120  # px — 固定高さ
+    TILE_HEIGHT = 144  # px — 固定高さ（+20%）
 
     # Render rows of 5
     for row_start in range(0, len(cards), COLS_PER_ROW):
@@ -479,7 +482,7 @@ def _render_smart_cards(cards: list[dict[str, Any]]) -> None:
                         </div>""",
                         unsafe_allow_html=True,
                     )
-                    submitted = st.form_submit_button("AI実行", use_container_width=True)
+                    submitted = st.form_submit_button("ㅤ", use_container_width=True)
                     if submitted:
                         prompt_template = card.get("prompt_template", "")
                         if not prompt_template or not str(prompt_template).strip():
@@ -492,6 +495,7 @@ def _render_smart_cards(cards: list[dict[str, Any]]) -> None:
                         st.session_state["pending_prompt"] = prompt_template
                         st.session_state["pending_display"] = display_label
                         st.session_state["pending_data_source"] = card.get("data_source", "all")
+                        st.session_state["_sc_running"] = True
                         st.rerun()
 
 

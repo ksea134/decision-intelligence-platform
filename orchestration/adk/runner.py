@@ -171,7 +171,6 @@ class ADKReasoningEngine:
                     for part in event.content.parts:
                         if hasattr(part, "text") and part.text and event.is_final_response():
                             final_text_parts.append(part.text)
-                            yield part.text
 
                         # function_callの実行をトラッキング
                         if hasattr(part, "function_call") and part.function_call:
@@ -187,12 +186,19 @@ class ADKReasoningEngine:
             logger.error("[ADK] Runner error: %s", e)
             yield f"エラーが発生しました: {str(e)}"
 
-        # 回答生成完了
+        # 回答生成完了 — tool_codeブロックを除去してからyield
+        full_text = "".join(final_text_parts)
+        if "tool_code" in full_text:
+            import re as _re
+            full_text = _re.sub(r"```tool_code.*?```", "", full_text, flags=_re.DOTALL).strip()
+            final_text_parts = [full_text]  # 保存用も更新
+        if full_text:
+            yield full_text
+
         flow_steps.append({"step": "回答生成", "done": True})
         yield {"flow_steps": list(flow_steps)}
 
         # Q&A自動保存（Vertex AI Search）
-        full_text = "".join(final_text_parts)
         if self._search_client and self._search_client.is_ready() and full_text:
             try:
                 # agent_typeを特定

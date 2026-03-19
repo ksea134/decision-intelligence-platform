@@ -132,7 +132,8 @@ def _build_intent_section(intent: str | None) -> str:
 def _build_language_rules() -> str:
     return (
         "【言語ルール】\n"
-        "- ユーザーの質問が日本語なら日本語で、英語なら英語で回答してください。\n\n"
+        "- ユーザーの質問が日本語なら日本語で、英語なら英語で回答してください。\n"
+        "- 回答にコードブロック（```tool_code、```python等）を含めないでください。自然言語のみで回答すること。\n\n"
     )
 
 

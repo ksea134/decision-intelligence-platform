@@ -1,0 +1,8 @@
+{
+  "cssTheme": "Atom",
+  "baseFontSize": 15,
+  "textFontFamily": "Hiragino Sans",
+  "enabledCssSnippets": [
+    "custom-headings"
+  ]
+}

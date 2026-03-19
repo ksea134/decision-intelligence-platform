@@ -121,7 +121,9 @@ def load_smart_cards(smart_cards_dir: str) -> list[dict[str, Any]]:
                     prompt_file = base / f"{code}{ext}"
                     if prompt_file.exists():
                         try:
-                            prompt_template = prompt_file.read_text(encoding="utf-8").strip()
+                            raw = prompt_file.read_text(encoding="utf-8").strip()
+                            # YAMLフロントマター除去（---...---）
+                            prompt_template = re.sub(r"^---\n.*?\n---\n*", "", raw, count=1, flags=re.DOTALL).strip()
                         except Exception as exc:
                             logger.warning("smart card prompt read error (%s): %s", prompt_file, exc)
                         break
