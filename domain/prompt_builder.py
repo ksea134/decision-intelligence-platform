@@ -139,12 +139,19 @@ def _build_language_rules() -> str:
 
 def _build_files_tag_instruction() -> str:
     return (
-        "【システム処理用タグ（必須）】\n"
-        "- 回答の最後に必ず [FILES: ファイル名1, ファイル名2] と記載してください。\n"
-        "- ファイル名はディレクトリパスを除いたファイル名のみ（拡張子は含む）を記載してください。\n"
-        "- ファイル名を [] で囲まないこと。カンマ区切りで列挙してください。\n"
-        "- データが存在しない場合は [FILES: なし] と記載してください。\n"
-        "- 出典表記・強調ルール・見出し構造は prompts に従ってください。\n\n"
+        "【出典情報の記載ルール（必須）】\n"
+        "回答の末尾に必ず [FILES: ...] タグを記載してください。\n\n"
+        "■ 記載すべき内容:\n"
+        "回答生成に使用したすべてのデータソースを記載:\n"
+        "- BigQueryテーブル: BQ:テーブル名 （例: BQ:production_results, BQ:equipment_alerts）\n"
+        "- GCSドキュメント: GCS:ファイル名 （例: GCS:inspection_report_2026-03-18.txt）\n"
+        "- ローカルファイル: LOCAL:ファイル名 （例: LOCAL:factory_overview.txt）\n\n"
+        "■ 記載例:\n"
+        "[FILES: BQ:production_results, BQ:equipment_alerts, GCS:inspection_report_2026-03-18.txt]\n\n"
+        "■ 禁止事項:\n"
+        "- 「なし」は禁止。回答を生成した以上、必ず何かのデータを参照しています。\n"
+        "- 最低1つ以上のデータソースを記載すること。\n"
+        "- 曖昧な記載（「データベース」「ドキュメント」等）は禁止。具体的なテーブル名・ファイル名を記載。\n\n"
     )
 
 

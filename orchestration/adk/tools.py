@@ -27,6 +27,7 @@ _search_client = None
 _data_ctx = None
 _company = None
 _last_search_result_count = 0
+_last_bq_tables: list[str] = []
 
 
 def set_tool_context(data_agent, search_client, data_ctx, company: str) -> None:
@@ -53,7 +54,9 @@ def query_bigquery() -> str:
     if _data_ctx is None:
         return "Error: No data context available."
 
+    global _last_bq_tables
     logger.warning("[ADK Tool] query_bigquery called: SELECT * 固定方式")
+    _last_bq_tables = []
 
     try:
         schema_text = _data_ctx.bq_result.content
@@ -63,6 +66,7 @@ def query_bigquery() -> str:
 
         all_parts = []
         for dataset, table in tables:
+            _last_bq_tables.append(table)
             sql = f"SELECT * FROM `{dataset}`.`{table}` LIMIT 100"
             try:
                 result = _data_agent.execute_sql(sql)

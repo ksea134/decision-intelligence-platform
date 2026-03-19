@@ -366,6 +366,7 @@ def _render_left_column(
     prompt = st.chat_input(placeholder)
     if prompt:
         st.session_state["pending_prompt"] = prompt
+        st.session_state["_sc_running"] = True
         st.rerun()
 
     # 補足フェーズの実行（メイン回答後の rerun で到達する）
@@ -645,11 +646,35 @@ def _execute_main_phase(
     logger.info("[PERF] メイン回答生成: %.2f秒", time.time() - start_ts)
 
     full_text = "".join(chunks)
+    # tool_codeブロックを除去（ストリーミングのチャンクまたぎ対策）
+    if "tool_code" in full_text:
+        full_text = re.sub(r"```tool_code.*?```", "", full_text, flags=re.DOTALL).strip()
     if not full_text and not out_data:
         st.warning("AIからの応答が空でした。もう一度お試しください。")
         return
 
     parsed = parse_llm_response(full_text)
+
+    # BQテーブル名を出典に追加（全エンジン対応）
+    _bq_tables: list[str] = []
+    # ADK runner経由のBQテーブル情報
+    if out_data.get("bq_tables"):
+        _bq_tables.extend(out_data["bq_tables"])
+    # V1エンジン: SQLからテーブル名を抽出
+    _sql = out_data.get("executed_sql") or parsed.sql or ""
+    if _sql:
+        _bq_tables += re.findall(r"FROM\s+`?[\w-]+`?\.`?([\w-]+)`?", _sql, re.IGNORECASE)
+        _bq_tables += re.findall(r"JOIN\s+`?[\w-]+`?\.`?([\w-]+)`?", _sql, re.IGNORECASE)
+    # BQ接続済みかつ出典にBQが無い場合、data_ctxのスキーマからテーブル名を補完
+    if not _bq_tables and data_ctx.bq_result and data_ctx.bq_result.content:
+        _schema_tables = re.findall(r"Table:\s*(\S+)", data_ctx.bq_result.content)
+        _bq_tables.extend(_schema_tables)
+    if _bq_tables:
+        _existing_bq = {f for f in parsed.files if f.startswith("BQ:")}
+        for t in dict.fromkeys(_bq_tables):
+            bq_name = f"BQ:{t}"
+            if bq_name not in _existing_bq:
+                parsed.files.insert(0, bq_name)
 
     safe_display = display if display and str(display).strip() else prompt
     user_msg: dict = {"role": "user", "content": safe_display, "llm_prompt": prompt}
@@ -1079,13 +1104,22 @@ def _render_badges(
         )
 
     if files:
-        citations = "　".join(f"※{i+1}：{name}" for i, name in enumerate(files))
+        structured = [f for f in files if f.startswith("BQ:") or f.startswith("LOCAL:")]
+        unstructured = [f for f in files if f.startswith("GCS:")]
+        other = [f for f in files if not f.startswith(("BQ:", "LOCAL:", "GCS:"))]
+        lines = []
+        if structured:
+            lines.append("構造化データ: " + ", ".join(structured))
+        if unstructured:
+            lines.append("非構造化データ: " + ", ".join(unstructured))
+        if other:
+            lines.append("その他: " + ", ".join(other))
+        html = "<br>".join(lines)
         st.markdown(
-            f"<p style='color:rgba(255,255,255,0.4);font-size:0.78rem;margin-top:6px;'>{citations}</p>",
+            f"<p style='color:rgba(255,255,255,0.4);font-size:0.78rem;margin-top:6px;'>{html}</p>",
             unsafe_allow_html=True,
         )
     else:
-        # filesが空の場合: AIが[FILES:]を出力しなかった
         st.markdown(
             "<p style='color:rgba(255,200,100,0.6);font-size:0.78rem;margin-top:6px;'>"
             "出典情報: AIからの戻り値なし</p>",

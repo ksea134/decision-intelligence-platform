@@ -183,6 +183,20 @@ def build_root_agent(
     if prompts:
         company_context += f"\n回答スタイル指示:\n{prompts}\n"
 
+    # 出典情報の記載ルール（全エージェント共通）
+    company_context += (
+        "\n\n【出典情報の記載ルール（必須）】\n"
+        "回答の末尾に必ず [FILES: ...] タグを記載してください。\n"
+        "- BigQueryテーブル: BQ:テーブル名 （例: BQ:production_results）\n"
+        "  ※ query_bigquery ツールで取得したデータのテーブル名も必ず含めること。\n"
+        "  ※ SQLの FROM 句に含まれるテーブル名を BQ: プレフィックス付きで記載。\n"
+        "- GCSドキュメント: GCS:ファイル名 （例: GCS:inspection_report.txt）\n"
+        "- ローカルファイル: LOCAL:ファイル名 （例: LOCAL:factory_overview.txt）\n"
+        "- 「なし」は禁止。回答を生成した以上、必ず何かのデータを参照しています。\n"
+        "- 最低1つ以上のデータソースを記載すること。\n"
+        "- query_bigquery を使った場合、BQ:テーブル名 が必ず含まれていなければならない。\n"
+    )
+
     # ベースinstructionにリセットしてから企業コンテキストを追加（累積防止）
     for agent in [analysis_agent, comparison_agent, forecast_agent, general_agent]:
         agent.instruction = _BASE_INSTRUCTIONS[agent.name] + company_context

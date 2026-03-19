@@ -186,14 +186,15 @@ class ADKReasoningEngine:
             logger.error("[ADK] Runner error: %s", e)
             yield f"エラーが発生しました: {str(e)}"
 
-        # 回答生成完了 — tool_codeブロックを除去してからyield
+        # 回答生成完了 — テキストをyield（tool_codeフィルタはchat.pyで実施）
         full_text = "".join(final_text_parts)
-        if "tool_code" in full_text:
-            import re as _re
-            full_text = _re.sub(r"```tool_code.*?```", "", full_text, flags=_re.DOTALL).strip()
-            final_text_parts = [full_text]  # 保存用も更新
         if full_text:
             yield full_text
+
+        # BQテーブル情報をyield（tools.pyで記録されたテーブル名を取得）
+        from orchestration.adk import tools as _tools
+        if _tools._last_bq_tables:
+            yield {"bq_tables": list(_tools._last_bq_tables)}
 
         flow_steps.append({"step": "回答生成", "done": True})
         yield {"flow_steps": list(flow_steps)}
