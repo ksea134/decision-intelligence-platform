@@ -79,6 +79,25 @@ class ADKReasoningEngine:
             company=company,
         )
 
+        # 過去事例検索（ADK実行前に必ず実行 — LLMの判断に任せない）
+        past_qa_context = ""
+        if self._search_client and self._search_client.is_ready():
+            try:
+                similar_qas = self._search_client.search(query=user_prompt, company=company, top_k=3)
+                if similar_qas:
+                    parts = []
+                    for i, qa in enumerate(similar_qas, 1):
+                        parts.append(f"事例{i}:\n  質問: {qa.get('question', '')}\n  回答: {qa.get('answer', '')}")
+                    past_qa_context = "\n\n".join(parts)
+                    flow_steps.append({"step": "過去事例検索", "done": True, "detail": f"{len(similar_qas)}件の類似事例を発見"})
+                else:
+                    flow_steps.append({"step": "過去事例検索", "done": True, "detail": "類似事例なし"})
+            except Exception as e:
+                logger.warning("[ADK] Past QA search failed: %s", e)
+                flow_steps.append({"step": "過去事例検索", "done": True, "detail": "検索スキップ"})
+        else:
+            flow_steps.append({"step": "過去事例検索", "done": True, "detail": "未接続"})
+
         # 企業固有コンテキストでエージェントを構築
         root_agent = build_root_agent(
             company=company,
@@ -86,9 +105,8 @@ class ADKReasoningEngine:
             gcs_docs=data_ctx.gcs_result.content,
             knowledge=data_ctx.assets.knowledge_text,
             prompts=data_ctx.assets.prompt_text,
+            past_qa_context=past_qa_context,
         )
-
-        flow_steps.append({"step": "過去事例検索", "done": True, "detail": "エージェントが自動実行"})
         flow_steps.append({"step": "ルートエージェント", "done": True, "detail": "質問を分析中"})
 
         # ADK Runner を作成・実行
@@ -162,10 +180,8 @@ class ADKReasoningEngine:
                                 flow_steps.append({"step": "データ取得", "done": True, "detail": "BigQueryからデータ取得"})
                                 yield {"status": "データを取得しています..."}
                             elif fc_name == "search_past_qa":
-                                # 過去事例検索のステップを更新
-                                for step in flow_steps:
-                                    if step["step"] == "過去事例検索":
-                                        step["detail"] = "検索実行中"
+                                # エージェントが追加検索を実行（メイン検索は実行済み）
+                                logger.info("[ADK] Agent called search_past_qa (additional search)")
 
         except Exception as e:
             logger.error("[ADK] Runner error: %s", e)

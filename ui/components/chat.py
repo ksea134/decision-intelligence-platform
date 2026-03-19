@@ -239,19 +239,20 @@ def render_chat(selected_company: str, cfg: CloudConfig, base_dir: str) -> None:
     from infra.vertex_ai_search import create_search_client
     search_client = create_search_client(project_id=cfg.project_id)
 
+    # V1エンジン（スマートカード用 — 高速）
+    engine_v1 = ReasoningEngine(client=client, data_agent=agent, memory=memory, search_client=search_client)
+
+    # ADKエンジン（チャット入力用 — 精度重視）
+    engine_adk = None
     if USE_ADK_ENGINE:
         try:
             from orchestration.adk.runner import ADKReasoningEngine
-            engine: EngineType = ADKReasoningEngine(client=client, data_agent=agent, memory=memory, search_client=search_client)
+            engine_adk = ADKReasoningEngine(client=client, data_agent=agent, memory=memory, search_client=search_client)
         except ImportError:
-            logger.warning("google-adk not installed — falling back to ReasoningEngine")
-            engine = ReasoningEngine(client=client, data_agent=agent, memory=memory, search_client=search_client)
-    elif USE_AGENT_ROUTER:
-        from orchestration.agents.router_agent import RouterAgent
-        router = RouterAgent(client=client)
-        engine = ReasoningEngine(client=client, data_agent=agent, memory=memory, router_agent=router, search_client=search_client)
-    else:
-        engine = ReasoningEngine(client=client, data_agent=agent, memory=memory, search_client=search_client)
+            logger.warning("google-adk not installed — ADK unavailable, using V1 for all")
+
+    # デフォルトエンジン（ADKが使えない場合はV1をフォールバック）
+    engine: EngineType = engine_adk if engine_adk else engine_v1
 
     # タイトル行
     title_col, btn_col = st.columns([10, 1.2])
@@ -283,7 +284,7 @@ def render_chat(selected_company: str, cfg: CloudConfig, base_dir: str) -> None:
         _render_right_column(selected_company, data_ctx, memory)
     with col_chat:
         _render_left_column(
-            memory=memory, engine=engine,
+            memory=memory, engine=engine, engine_v1=engine_v1,
             data_ctx=data_ctx, selected_company=selected_company,
         )
 
@@ -295,6 +296,7 @@ def render_chat(selected_company: str, cfg: CloudConfig, base_dir: str) -> None:
 def _render_left_column(
     memory: SessionMemory,
     engine: EngineType,
+    engine_v1: EngineType,
     data_ctx: DataContext,
     selected_company: str,
 ) -> None:
@@ -327,10 +329,12 @@ def _render_left_column(
             is_smart_card = pending_display is not None
             # データソースフィルタ適用
             filtered_ctx = _filter_data_ctx(data_ctx, pending_data_source) if is_smart_card else data_ctx
+            # ハイブリッドエンジン: スマートカード→V1（高速）、チャット→ADK（精度）
+            selected_engine = engine_v1 if is_smart_card else engine
             _execute_main_phase(
                 prompt=pending_prompt,
                 display=display_text,
-                memory=memory, engine=engine,
+                memory=memory, engine=selected_engine,
                 data_ctx=filtered_ctx, selected_company=selected_company,
                 is_smart_card=is_smart_card,
             )

@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 from google.adk.agents import LlmAgent
-from orchestration.adk.tools import query_bigquery, search_past_qa
+from orchestration.adk.tools import query_bigquery
 
 logger = logging.getLogger(__name__)
 
@@ -50,10 +50,9 @@ analysis_agent = LlmAgent(
         "  2. 主要因の特定（寄与度%付き）\n"
         "  3. 根本原因分析（5 Whys）\n"
         "  4. 推奨アクション（短期/中期/長期）\n\n"
-        "必要なデータがあれば query_bigquery ツールを使って取得してください。\n"
-        "過去の類似分析があれば search_past_qa ツールで検索してください。\n"
+        "データが必要な場合は query_bigquery ツールを呼んでください。全テーブルのデータがCSVで返されます。\n"
     ),
-    tools=[query_bigquery, search_past_qa],
+    tools=[query_bigquery],
 )
 
 comparison_agent = LlmAgent(
@@ -71,10 +70,9 @@ comparison_agent = LlmAgent(
         "  2. 比較表（数値・差分・優位を含む）\n"
         "  3. 各対象の強み・弱み\n"
         "  4. 総合評価と推奨事項\n\n"
-        "必要なデータがあれば query_bigquery ツールを使って取得してください。\n"
-        "過去の類似分析があれば search_past_qa ツールで検索してください。\n"
+        "データが必要な場合は query_bigquery ツールを呼んでください。全テーブルのデータがCSVで返されます。\n"
     ),
-    tools=[query_bigquery, search_past_qa],
+    tools=[query_bigquery],
 )
 
 forecast_agent = LlmAgent(
@@ -92,10 +90,9 @@ forecast_agent = LlmAgent(
         "  2. シナリオ別予測（表形式: 予測値/成長率/確率）\n"
         "  3. リスク要因と影響度\n"
         "  4. 推奨アクション\n\n"
-        "必要なデータがあれば query_bigquery ツールを使って取得してください。\n"
-        "過去の類似分析があれば search_past_qa ツールで検索してください。\n"
+        "データが必要な場合は query_bigquery ツールを呼んでください。全テーブルのデータがCSVで返されます。\n"
     ),
-    tools=[query_bigquery, search_past_qa],
+    tools=[query_bigquery],
 )
 
 general_agent = LlmAgent(
@@ -109,10 +106,9 @@ general_agent = LlmAgent(
         "  2. 根拠を示す: データや事実に基づく説明\n"
         "  3. 詳細を補足: 必要に応じて追加情報\n"
         "  4. 次のステップ: 追加で検討すべき点があれば提示\n\n"
-        "必要なデータがあれば query_bigquery ツールを使って取得してください。\n"
-        "過去の類似Q&Aがあれば search_past_qa ツールで検索してください。\n"
+        "データが必要な場合は query_bigquery ツールを呼んでください。全テーブルのデータがCSVで返されます。\n"
     ),
-    tools=[query_bigquery, search_past_qa],
+    tools=[query_bigquery],
 )
 
 
@@ -154,6 +150,7 @@ def build_root_agent(
     gcs_docs: str = "",
     knowledge: str = "",
     prompts: str = "",
+    past_qa_context: str = "",
 ) -> LlmAgent:
     """
     企業固有のコンテキストを注入したルートエージェントを構築する。
@@ -175,6 +172,11 @@ def build_root_agent(
             "※数値データ（BigQuery）と合わせて、資料の内容も必ず踏まえて回答すること。\n"
             "※数値だけの回答は不十分。資料に書かれた背景・要因・提言も含めること。\n"
             f"{gcs_docs}\n"
+        )
+    if past_qa_context:
+        company_context += (
+            "\n【過去の類似Q&A — 参考にして回答の一貫性を保つこと】\n"
+            f"{past_qa_context}\n"
         )
     if knowledge:
         company_context += f"\n企業前提知識:\n{knowledge}\n"
