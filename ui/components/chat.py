@@ -300,6 +300,7 @@ def _render_left_column(
 ) -> None:
     # メッセージが0件のときスマートカードを表示
     if not memory.get_messages():
+        st.markdown("<span style='color:rgba(255,255,255,0.45);font-size:0.95rem;font-weight:400;letter-spacing:0.08em;'>DI Dashboard</span>", unsafe_allow_html=True)
         _render_smart_cards(data_ctx.assets.smart_cards)
 
     # メッセージ履歴の描画
@@ -353,6 +354,7 @@ def _render_left_column(
                         st.rerun()
 
     # チャット入力
+    st.markdown("<span style='color:rgba(255,255,255,0.45);font-size:0.95rem;font-weight:400;letter-spacing:0.08em;'>DI Conversation</span>", unsafe_allow_html=True)
     placeholder = "本日はどのようなお手伝いをしましょうか。" if not memory.get_messages() else "追加でご質問はございますか。"
     prompt = st.chat_input(placeholder)
     if prompt:
@@ -1310,8 +1312,26 @@ def _render_right_column(
 ) -> None:
     assets = data_ctx.assets
 
+    st.markdown(
+        "<div style='display:flex;align-items:center;gap:8px;margin:16px 0 10px 0;'>"
+        "<div style='flex:1;height:1px;background:rgba(255,255,255,0.15);'></div>"
+        "<span style='color:rgba(255,255,255,0.45);font-size:0.75rem;font-weight:400;"
+        "letter-spacing:0.12em;white-space:nowrap;'>ナビゲーション</span>"
+        "<div style='flex:1;height:1px;background:rgba(255,255,255,0.15);'></div></div>",
+        unsafe_allow_html=True,
+    )
+
     with st.expander("📌 はじめに", expanded=False):
         st.markdown(assets.intro_text) if assets.intro_text else st.info("設定なし")
+
+    st.markdown(
+        "<div style='display:flex;align-items:center;gap:8px;margin:16px 0 10px 0;'>"
+        "<div style='flex:1;height:1px;background:rgba(255,255,255,0.15);'></div>"
+        "<span style='color:rgba(255,255,255,0.45);font-size:0.75rem;font-weight:400;"
+        "letter-spacing:0.12em;white-space:nowrap;'>プロンプト</span>"
+        "<div style='flex:1;height:1px;background:rgba(255,255,255,0.15);'></div></div>",
+        unsafe_allow_html=True,
+    )
 
     with st.expander(f"📖 前提知識（{len(assets.knowledge_files)}件）", expanded=False):
         if assets.knowledge_files:
@@ -1325,6 +1345,15 @@ def _render_right_column(
 
     with st.expander("📝 役割・回答方針", expanded=False):
         st.markdown(assets.prompt_text) if assets.prompt_text else st.info("設定なし")
+
+    st.markdown(
+        "<div style='display:flex;align-items:center;gap:8px;margin:16px 0 10px 0;'>"
+        "<div style='flex:1;height:1px;background:rgba(255,255,255,0.15);'></div>"
+        "<span style='color:rgba(255,255,255,0.45);font-size:0.75rem;font-weight:400;"
+        "letter-spacing:0.12em;white-space:nowrap;'>処理概要</span>"
+        "<div style='flex:1;height:1px;background:rgba(255,255,255,0.15);'></div></div>",
+        unsafe_allow_html=True,
+    )
 
     latest = next((m for m in reversed(memory.get_messages()) if m["role"] == "assistant"), None)
     with st.expander("AI処理フロー", expanded=True):
@@ -1351,8 +1380,8 @@ def _render_right_column(
     st.markdown(
         "<div style='display:flex;align-items:center;gap:8px;margin:16px 0 10px 0;'>"
         "<div style='flex:1;height:1px;background:rgba(255,255,255,0.15);'></div>"
-        "<span style='color:rgba(255,255,255,0.45);font-size:0.75rem;font-weight:700;"
-        "letter-spacing:0.12em;white-space:nowrap;'>モニタリング</span>"
+        "<span style='color:rgba(255,255,255,0.45);font-size:0.75rem;font-weight:400;"
+        "letter-spacing:0.12em;white-space:nowrap;'>データ取得先</span>"
         "<div style='flex:1;height:1px;background:rgba(255,255,255,0.15);'></div></div>",
         unsafe_allow_html=True,
     )
