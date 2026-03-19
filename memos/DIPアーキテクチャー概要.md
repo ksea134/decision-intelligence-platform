@@ -1,169 +1,100 @@
 # DIPアーキテクチャー概要
 
 > 作成日: 2026-03-18
-> 更新日: 2026-03-18（Phase 3 Vertex AI Search統合後）
+> 更新日: 2026-03-19
+
+このファイルはDIPの全体像を示す。各層の詳細は個別の仕様書を参照。
 
 ---
 
-## 現在のアーキテクチャ（v4 / v2.4.0-stable以降）
+## 1. DIPとは
+
+Decision Intelligence Platform（DIP）は、企業のデータを活用した意思決定支援AIチャットアプリケーション。ユーザーが自然言語で質問すると、BigQuery上の構造化データやGCS上のドキュメントをもとに、分析・比較・予測などの回答を生成する。
+
+---
+
+## 2. 7層構造
 
 ```
-ユーザーの質問
-  ↓
-1. 質問理解
-  ↓
-2. 過去事例検索（Vertex AI Search）
-  企業単位で類似Q&Aを検索 → 過去の分析結果をコンテキストに注入
-  ↓
-3. ルートエージェント（キーワード分類）
-  質問を4分類: 要因分析 / 比較 / 予測 / 汎用
-  ↓
-4. 専門エージェント（intent別プロンプト切替）
-  ↓
-5. データ取得（BigQuery）
-  全テーブル SELECT * で取得 → CSVデータをプロンプトに注入
-  ↓
-6. 回答生成（Gemini Flash / ストリーミング）
-  過去事例 + BQデータ + 専門フレームワーク → 回答
-  ↓
-7. 補足フェーズ
-  ├── 思考ロジック生成
-  ├── インフォグラフィック生成
-  └── 深掘り質問生成
-  ↓
-8. Q&A自動保存（Vertex AI Search）
-  質問・回答・企業名・エージェント分類を自動保存
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        統合運用: Kyndryl Bridge                         │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+┌───────────────────────┬───────────┴───────────┬───────────────────────┐
+│ Security & Governance │      AI Core System    │  AI Ops & Observability│
+│      守りの要         │                        │    進化と品質の監視    │
+├───────────────────────┼────────────────────────┼───────────────────────┤
+│ ・VPC Service Controls│  UI/UX層               │ ・Kyndryl Bridge      │
+│ ・Cloud Identity/IAM  │   └ Cloud Run + IAP    │   Connector           │
+│ ・Cloud DLP           │   └ Grounding機能      │ ・Cloud Monitoring    │
+│ ・Cloud KMS(CMKS)     │                        │   / Logging           │
+│                       │  Orchestration層       │ ・Vertex AI Evaluation│
+│                       │   └ Vertex AI Agent    │ ・Human in the loop   │
+│                       │     Builder            │ ・FinOps/Cost Mgmt    │
+│                       │   └ Reasoning Engine   │                       │
+│                       │   └ Memory Store       │                       │
+│                       │   └ Vertex AI Search   │                       │
+│                       │                        │                       │
+│                       │  Model層               │                       │
+│                       │   └ Gemini 2.5 Pro     │                       │
+│                       │   └ Gemini 2.5 Flash   │                       │
+│                       │   └ Model Garden       │                       │
+│                       │                        │                       │
+│                       │  Governance層          │                       │
+│                       │   └ Dataplex           │                       │
+│                       │                        │                       │
+│                       │  Storage層             │                       │
+│                       │   └ BigQuery Storage   │                       │
+│                       │   └ BigLake            │                       │
+│                       │   └ Cloud Storage      │                       │
+│                       │                        │                       │
+│                       │  Ingestion層           │                       │
+│                       │   └ Data Fusion        │                       │
+│                       │   └ Dataflow           │                       │
+└───────────────────────┴────────────────────────┴───────────────────────┘
+                                    │
+┌─────────────────────────────────────────────────────────────────────────┐
+│ DataSource: SAP, Salesforce, ServiceNow, DB, Excel, PPT, Word, PDF...  │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### v4で何が変わったか（速度改善の正体）
+---
 
-v1〜v3.1では、Geminiに「SQLを作るかどうか」「何回SQLを実行するか」「いつテキスト回答に切り替えるか」の全てを委ねていた。Geminiの判断が毎回変わるので、速いときもあれば3分かかるときもあった。
+## 3. 層別仕様書一覧
 
-v4では、Geminiに任せていた仕事（SQL生成、データ取得判断、ループ制御）をDIP側に取り戻した。Geminiには「データを渡して回答文を書く」という1つの仕事だけをやらせるようにした。
+| 層 | ファイル | 概要 | 状態 |
+|---|---|---|---|
+| **UI/UX層** | `memos/層別仕様_UI-UX層.md` | Streamlit、チャットUI、スマートカード、将来のCloud Run + IAP | 実装済み（MVP） |
+| **Orchestration層** | `memos/層別仕様_Orchestration層.md` | Reasoning Engine、エージェント構成、Vertex AI Search、キャッシュ、処理フロー | 実装済み（v4 + ADK） |
+| **Model層** | `memos/層別仕様_Model層.md` | Gemini Flash/Pro使い分け、将来のModel Garden連携、Gemini vs Claude比較 | 一部実装済み |
+| **Governance層** | `memos/層別仕様_Governance層.md` | Dataplex、行/列レベルアクセス制御、DLP、データリネージュ | 未着手（Phase 6） |
+| **Storage層** | `memos/層別仕様_Storage層.md` | BigQuery、GCS、ローカルファイル、Vertex AI Searchストア | 実装済み |
+| **Ingestion層** | `memos/層別仕様_Ingestion層.md` | Data Fusion、Dataflow、現在は手動アップロード | 未着手（手動運用中） |
+| **DataSource層** | `memos/層別仕様_DataSource層.md` | SAP、Salesforce、ServiceNow等の外部システム、A2A連携 | 将来Phase |
 
-| | v1〜v3.1 | v4 |
-|--|---------|-----|
-| SQLを誰が考えるか | Gemini（毎回違うSQLを生成） | DIP（SELECT * 固定） |
-| Gemini呼び出し回数 | 不定（1〜10回以上） | 1回固定 |
-| データ取得の判断 | Geminiに委ねる（呼ばないこともある） | DIPが必ず実行 |
-| ループ | あり（抜けないことがある） | なし |
+### 横断ドキュメント
 
-### 設計ルール（絶対に守ること）
-1. function callingは使わない（v4で廃止済み）
-2. whileループでGemini APIを呼び出さない
-3. Gemini呼び出し回数は固定（BQ時: 1回、非BQ時: 1回）
-4. ストリーミングはテキスト回答生成にのみ使用
-5. チャット本体（reasoning_engine.py, chat.py）は安易に変更しない
+| ドキュメント | 概要 |
+|---|---|
+| `memos/層別仕様_Security＆Governance層.md` | Security & Governance柱: 対策一覧、3段階アクセス制御、IAP、開発時の機密データ保護 |
+| `memos/層別仕様_AI Ops＆Observability層.md` | AI Ops & Observability柱: 監視、品質評価、FinOps、Human in the Loop |
+| `memos/開発ルール.md` | 全ルール・テスト項目・開発プロセス |
 
 ---
 
-## エージェント構成
-
-| エージェント | 分類トリガー | 専門フレームワーク |
-|------------|------------|------------------|
-| 要因分析 | 「なぜ」「原因」「理由」「要因」 | 5 Whys + 寄与度分析 |
-| 比較 | 「比較」「違い」「vs」「どちらが」 | 比較表 + 強み弱み構造 |
-| 予測 | 「予測」「今後」「見通し」「どうなる」 | 3シナリオ（楽観/基本/悲観） |
-| 汎用 | 上記以外 | 標準プロンプト |
-
-### 現在の実態
-- Routerだけがエージェントとして独立
-- 各専門エージェントはプロンプトの切り替えで実現
-- 裏で動くモデルは全部同じGemini Flash
-
----
-
-## Vertex AI Search（Phase 3 — 実装済み）
-
-### 目的
-過去のQ&Aを長期記憶として保存し、類似事例の検索で回答精度と一貫性を向上させる。
-使えば使うほど賢くなるAI。
-
-### 導入メリット
-- **過去の分析を活用**: 前回の分析結果を踏まえて回答できる
-- **ナレッジの蓄積**: 企業ごとの知見が蓄積される
-- **類似質問の検出**: 別の言い方でも過去の回答を活用
-- **新任者の支援**: 過去の分析結果にアクセスでき、引き継ぎコストが下がる
-
-### GCPリソース
-
-| 項目 | 値 |
-|------|------|
-| サービス | Vertex AI Search（Discovery Engine） |
-| GCPプロジェクト | decision-support-ai |
-| データストアID | dip-knowledge-store |
-| 検索アプリID | dip-search-app |
-| リージョン | global |
-| 管理 | GCP Console → Agent Builder → データストア |
-
-### 仕様
+## 4. 現在のバージョンと状態
 
 | 項目 | 内容 |
-|------|------|
-| 検索対象 | 企業単位（他の企業のQ&Aは混ざらない） |
-| 保存タイミング | 回答生成後に自動保存 |
-| 保存内容 | 質問、回答（先頭2000文字）、企業名、エージェント分類、日時 |
-| 検索タイミング | 質問を受け取った直後（Router分類の前） |
-| 検索件数 | 上位3件 |
-| 検索結果の使い方 | システムプロンプトに「過去の類似Q&A」として注入 |
-| 保存期間 | 無期限（手動削除可能） |
-| 保存場所 | Google Cloud上（ローカルには保存しない） |
-| 失敗時の動作 | チャット動作に影響しない（保存・検索とも失敗を無視） |
-
-### 処理フロー上の位置
-
-```
-質問理解 → 過去事例検索 → ルートエージェント → データ取得 → 回答生成 → Q&A自動保存
-                                                                          ↑
-                                                               次回の検索対象になる
-```
-
-### 技術構成
-- パッケージ: google-cloud-discoveryengine
-- クライアント: infra/vertex_ai_search.py（VertexAISearchClient）
-- Embedding・チャンク分割・インデックス管理: Vertex AI Search側で自動
-- 検索: セマンティック検索 + 企業名フィルタ
-- Agent Builder連携: 組み込み済み（Phase 4Aで活用予定）
-
-### GCPコンソールでの確認方法
-1. Google Cloud Console → Agent Builder → データストア
-2. 「DIP Knowledge Store」を選択
-3. ドキュメント一覧で保存されたQ&Aを確認・削除可能
+|---|---|
+| 現行バージョン | v4（v2.4.0-stable以降） |
+| メインモデル | Gemini 2.5 Flash / Pro（エージェント種別で自動選択） |
+| GCPプロジェクト | decision-support-ai |
+| リポジトリ | https://github.com/ksea134/decision-intelligence-platform |
+| Streamlit Cloud | https://dip134.streamlit.app/ |
 
 ---
 
-## 将来のアーキテクチャ（Phase 4A以降）
-
-### Vertex AI Agent Builder 移行後
-
-| 項目 | 今 | Agent Builder移行後 |
-|------|------|------------------|
-| エージェント管理 | コード内のプロンプト文字列 | GCPコンソールでPlaybook編集 |
-| デプロイ | Streamlit Cloud手動デプロイ | Agent Engineが自動スケーリング |
-| ツール管理 | コード内でfunction定義 | Extensions APIで登録・管理 |
-| セッション管理 | インメモリ（揮発性） | Session APIで永続化 |
-| 監視 | ログファイル確認 | Cloud Monitoringダッシュボード |
-| モデル切替 | コード変更必要 | コンソールから切替可能 |
-
-### モデル使い分け（Phase 4B — 実装済み）
-
-| エージェント | モデル | 理由 |
-|------------|--------|------|
-| ルーター | Gemini 2.5 Flash | 分類だけなので高速・低コスト |
-| 汎用回答 | Gemini 2.5 Flash | シンプルな質問は高速で十分 |
-| 要因分析 | Gemini 2.5 Pro | 5 Whys等の深い推論が必要 |
-| 比較分析 | Gemini 2.5 Pro | 多角的な分析が必要 |
-| 予測分析 | Gemini 2.5 Pro | シナリオ分析で精度が重要 |
-
-設定ファイル: `orchestration/adk/agent_definition.py`
-
-将来の拡張:
-- 高度な推論 → Claude Opus（Model Garden経由）
-- コード生成 → Claude Sonnet（Model Garden経由）
-
----
-
-## ロードマップ進捗
+## 5. ロードマップ進捗
 
 | Phase | 名称 | ステータス |
 |-------|------|-----------|
@@ -179,12 +110,4 @@ v4では、Geminiに任せていた仕事（SQL生成、データ取得判断、
 | 7 | Observability & FinOps | 未着手 |
 | 8 | 高度機能（InlineViz等） | 未着手 |
 
-### 各Phaseの概要
-
-| Phase | 内容 | 今やるべきか |
-|-------|------|------------|
-| **5** | Cloud Run + IAP + Agent Engineデプロイ。Streamlitから脱却し、独自WebアプリでGCPコンソール管理可能に | エンタープライズ展開時。Agent Engineデプロイもここで実施 |
-| **4B追加** | Model Garden連携。Claude Opus/Sonnet等の外部モデルをVertex AI経由で利用。高度な推論タスクに活用 | Phase 5（Cloud Run）の後。GCPの認証基盤が使えるため |
-| **6** | Dataplex（データガバナンス）。複数企業データのセキュアな分離管理、監査証跡、機密データマスキング | 複数企業の本番運用時 |
-| **7** | Cloud Monitoring（監視・コスト管理）。レイテンシ、エラー率、トークン使用量、APIコスト可視化 | 本番運用時 |
-| **8** | InlineViz（文中チャート描画）。回答文の中にグラフや表を直接描画するUX向上機能 | いつでも着手可能。UX差別化要素 |
+→ 詳細は `memos/DIP開発ロードマップv2.1.md`

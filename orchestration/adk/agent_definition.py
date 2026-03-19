@@ -139,6 +139,15 @@ root_agent = LlmAgent(
 )
 
 
+# 各エージェントの元のinstructionを保存（毎回リセットするため）
+_BASE_INSTRUCTIONS = {
+    "analysis_agent": analysis_agent.instruction,
+    "comparison_agent": comparison_agent.instruction,
+    "forecast_agent": forecast_agent.instruction,
+    "general_agent": general_agent.instruction,
+}
+
+
 def build_root_agent(
     company: str = "",
     bq_schema: str = "",
@@ -151,8 +160,9 @@ def build_root_agent(
 
     実行時に企業名やBQスキーマが分かるため、
     各サブエージェントのinstructionに追加情報を注入する。
+    注意: 毎回ベースinstructionからリセットしてから追記する（累積防止）。
     """
-    # 企業固有のコンテキストを各サブエージェントに追加
+    # 企業固有のコンテキストを組み立て
     company_context = ""
     if company:
         company_context += f"\n\n対象企業: {company}\n"
@@ -171,8 +181,8 @@ def build_root_agent(
     if prompts:
         company_context += f"\n回答スタイル指示:\n{prompts}\n"
 
-    if company_context:
-        for agent in [analysis_agent, comparison_agent, forecast_agent, general_agent]:
-            agent.instruction = agent.instruction + company_context
+    # ベースinstructionにリセットしてから企業コンテキストを追加（累積防止）
+    for agent in [analysis_agent, comparison_agent, forecast_agent, general_agent]:
+        agent.instruction = _BASE_INSTRUCTIONS[agent.name] + company_context
 
     return root_agent

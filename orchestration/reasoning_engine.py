@@ -177,6 +177,7 @@ class ReasoningEngine:
         past_qa_context = ""
         if self._search_client and self._search_client.is_ready():
             try:
+                logger.warning("[Search] Searching past Q&A: query='%s', company='%s'", user_prompt[:50], company)
                 similar_qas = self._search_client.search(query=user_prompt, company=company, top_k=3)
                 if similar_qas:
                     parts = []

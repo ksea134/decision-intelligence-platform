@@ -92,6 +92,7 @@ def search_past_qa(query: str) -> str:
         return "過去事例検索は利用できません。"
 
     try:
+        logger.warning("[ADK Tool] search_past_qa called: query='%s', _company='%s'", query[:50], _company)
         results = _search_client.search(query=query, company=_company or "", top_k=3)
         if not results:
             return "類似する過去の事例は見つかりませんでした。"
