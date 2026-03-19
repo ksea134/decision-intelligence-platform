@@ -5,7 +5,7 @@ infra/file_loader.py
 - 2026-03-16: load_smart_cards() で空ファイルの場合はデフォルト値を維持するよう修正
 """
 from __future__ import annotations
-import copy, csv, logging, os, re
+import csv, logging, os, re
 from pathlib import Path
 from typing import Any
 from config.app_config import PATHS
@@ -86,35 +86,57 @@ def load_directory(directory_path: str, extensions: tuple[str, ...], add_filenam
 
 def load_smart_cards(smart_cards_dir: str) -> list[dict[str, Any]]:
     """
-    スマートカードの読み込み。
-    
-    企業別の smart_cards/ ディレクトリにカスタムプロンプトがあれば上書きする。
-    
-    【修正】空ファイルの場合はデフォルト値を維持する。
-    これにより、空の .md/.txt ファイルが存在しても Gemini API エラーを防げる。
+    スマートカードの読み込み（CSV管理方式）。
+
+    smart_cards/smart_cards.csv からカード定義を読み込み、
+    同ディレクトリの {コード}.md からプロンプトを取得する。
+
+    - CSVなし → 空リスト（0枚表示）
+    - 最大25枚まで（26個目以降は切り捨て）
+    - mdファイルなし → prompt_template = ""（クリック時にエラー表示）
     """
-    from infra._smart_card_defaults import DEFAULT_SMART_CARDS
-    cards = copy.deepcopy(DEFAULT_SMART_CARDS)
+    MAX_CARDS = 25
     base = Path(smart_cards_dir)
-    if not base.exists():
-        return cards
-    for card in cards:
-        for ext in (".md", ".txt"):
-            candidate = base / f"{card['id']}{ext}"
-            if candidate.exists():
-                try:
-                    content = candidate.read_text(encoding="utf-8").strip()
-                    # 【修正】空のファイルの場合はデフォルト値を維持（Gemini API 400エラー防止）
-                    if content:
-                        card["prompt_template"] = content
-                    else:
-                        logger.warning(
-                            "smart card file is empty, using default: %s (default: %s)",
-                            candidate, card["prompt_template"][:50] + "..."
-                        )
-                except Exception as exc:
-                    logger.warning("smart card read error (%s): %s", candidate, exc)
-                break
+    csv_path = base / "smart_cards.csv"
+
+    if not csv_path.exists():
+        logger.info("smart_cards.csv not found: %s — 0枚表示", csv_path)
+        return []
+
+    cards: list[dict[str, Any]] = []
+    try:
+        with csv_path.open("r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if len(cards) >= MAX_CARDS:
+                    logger.warning("smart_cards.csv: %d枚を超えたため切り捨て", MAX_CARDS)
+                    break
+                code = row.get("コード", "").strip()
+                if not code:
+                    continue
+
+                # プロンプト読込（{コード}.md → {コード}.txt の順で探す）
+                prompt_template = ""
+                for ext in (".md", ".txt"):
+                    prompt_file = base / f"{code}{ext}"
+                    if prompt_file.exists():
+                        try:
+                            prompt_template = prompt_file.read_text(encoding="utf-8").strip()
+                        except Exception as exc:
+                            logger.warning("smart card prompt read error (%s): %s", prompt_file, exc)
+                        break
+
+                cards.append({
+                    "id": code,
+                    "icon": row.get("アイコン", "").strip(),
+                    "title": row.get("タイトル", "").strip(),
+                    "prompt_template": prompt_template,
+                })
+    except Exception as exc:
+        logger.error("smart_cards.csv read error: %s", exc)
+        return []
+
+    logger.info("smart_cards loaded: %d枚 from %s", len(cards), csv_path)
     return cards
 
 def safe_filename(name: str) -> str:

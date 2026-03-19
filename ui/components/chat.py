@@ -111,6 +111,24 @@ div[data-testid="stExpander"] details div[data-testid="stExpanderDetails"] {
   background-color: #111827 !important;
   color: #e5e7eb !important;
 }
+/* スマートカード用CSS */
+[data-testid="stForm"] {border:none !important;padding:0 !important;margin:0 !important;}
+[data-testid="stForm"] [data-testid="stFormSubmitButton"] {margin-top:-16px !important;}
+[data-testid="stForm"] [data-testid="stFormSubmitButton"] button {
+  font-size:0.75rem !important;
+  padding:6px 12px !important;
+  border:1px solid rgba(255,255,255,0.1) !important;
+  border-top:none !important;
+  border-radius:0 0 12px 12px !important;
+  background:linear-gradient(135deg, #1a1a2e, #16213e) !important;
+  color:#8c98a9 !important;
+  transition:all 0.2s !important;
+}
+[data-testid="stForm"] [data-testid="stFormSubmitButton"] button:hover {
+  border-color:#D41F3C !important;
+  color:#D41F3C !important;
+  background:linear-gradient(135deg, #2a1a2e, #26213e) !important;
+}
 /* サイドバーフッター用CSS */
 [data-testid="stSidebarUserContent"] { padding-bottom:80px!important; }
 .sidebar-footer {
@@ -350,23 +368,54 @@ def _render_left_column(
 # スマートカード
 # ============================================================
 
+_KYNDRYL = "#D41F3C"
+
 def _render_smart_cards(cards: list[dict[str, Any]]) -> None:
-    max_cols = min(len(cards), 5)
-    cols = st.columns(max_cols, gap="small")
-    for i, card in enumerate(cards[:max_cols]):
-        label = card["icon"] + " " + card["title"]
-        if cols[i].button(label, key="sc_" + card["id"], use_container_width=True):
-            # 【修正】prompt_templateが空の場合はエラー表示（Gemini API 400エラー防止）
-            prompt_template = card.get("prompt_template", "")
-            if not prompt_template or not str(prompt_template).strip():
-                st.error(
-                    f"⚠️ スマートカード「{card.get('title', card['id'])}」の prompt_template が設定されていません。\n"
-                    f"smart_cards/ ディレクトリに {card['id']}.md または {card['id']}.txt を作成してください。"
-                )
-                return
-            st.session_state["pending_prompt"]  = prompt_template
-            st.session_state["pending_display"] = label
-            st.rerun()
+    if not cards:
+        return
+
+    COLS_PER_ROW = 5
+    TILE_HEIGHT = 120  # px — 固定高さ
+
+    # Render rows of 5
+    for row_start in range(0, len(cards), COLS_PER_ROW):
+        row_cards = cards[row_start : row_start + COLS_PER_ROW]
+        cols = st.columns(COLS_PER_ROW, gap="small")
+        for i, card in enumerate(row_cards):
+            with cols[i]:
+                icon = card.get("icon", "")
+                title = card.get("title", card["id"])
+
+                with st.form(key=f"sc_form_{card['id']}"):
+                    st.markdown(
+                        f"""<div style="
+                            height:{TILE_HEIGHT - 36}px;display:flex;flex-direction:column;
+                            align-items:center;justify-content:center;text-align:center;
+                            background:linear-gradient(135deg, #1a1a2e, #16213e);
+                            border-radius:12px 12px 0 0;
+                            border:1px solid rgba(255,255,255,0.1);
+                            border-bottom:none;
+                            padding:10px 8px;margin-bottom:0;
+                        " onmouseover="this.style.borderColor='{_KYNDRYL}';this.style.background='linear-gradient(135deg, #2a1a2e, #26213e)'"
+                          onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.background='linear-gradient(135deg, #1a1a2e, #16213e)'">
+                            <div style="font-size:1.4rem;margin-bottom:4px;">{icon}</div>
+                            <div style="font-size:0.85rem;font-weight:700;color:#f3f4f6;line-height:1.2;">{title}</div>
+                        </div>""",
+                        unsafe_allow_html=True,
+                    )
+                    submitted = st.form_submit_button("AI実行", use_container_width=True)
+                    if submitted:
+                        prompt_template = card.get("prompt_template", "")
+                        if not prompt_template or not str(prompt_template).strip():
+                            st.error(
+                                f"スマートカード「{title}」のプロンプトが未設定です。\n"
+                                f"smart_cards/{card['id']}.md を作成してください。"
+                            )
+                            return
+                        display_label = f"{icon} {title}" if icon else title
+                        st.session_state["pending_prompt"] = prompt_template
+                        st.session_state["pending_display"] = display_label
+                        st.rerun()
 
 
 # ============================================================
