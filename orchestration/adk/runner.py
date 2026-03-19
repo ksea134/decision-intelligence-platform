@@ -83,6 +83,7 @@ class ADKReasoningEngine:
         root_agent = build_root_agent(
             company=company,
             bq_schema=data_ctx.bq_result.content if data_ctx.bq_connected else "",
+            gcs_docs=data_ctx.gcs_result.content,
             knowledge=data_ctx.assets.knowledge_text,
             prompts=data_ctx.assets.prompt_text,
         )

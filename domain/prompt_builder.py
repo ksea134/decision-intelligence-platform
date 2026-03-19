@@ -231,9 +231,15 @@ def _build_data_section(
         )
 
     if gcs_docs.strip():
-        section += f"■ GCS資料:\n{gcs_docs}\n"
+        section += (
+            "■ GCS資料（報告書・分析レポート — 必ず回答に反映すること）:\n"
+            "  ※以下の資料には数値の背景・原因・考察が含まれている。\n"
+            "  ※数値データ（BigQuery）と合わせて、資料の内容も必ず踏まえて回答すること。\n"
+            "  ※数値だけの回答は不十分。資料に書かれた背景・要因・提言も含めること。\n"
+            f"{gcs_docs}\n"
+        )
 
     if section:
-        section = "【データ活用】\n- すべてのデータを踏まえて回答を生成してください。\n\n" + section
+        section = "【データ活用】\n- すべてのデータ（数値＋報告書）を踏まえて回答を生成してください。\n\n" + section
 
     return section

@@ -243,6 +243,12 @@ class ReasoningEngine:
                 "\n\n【BigQueryから取得した実データ — 必ずこの数値を使って回答すること】\n"
                 f"{bq_data_csv}\n"
             )
+            # GCS資料がある場合、数値だけでなく報告書も必ず反映するよう再強調
+            if data_ctx.gcs_result.content.strip():
+                sys_prompt += (
+                    "\n【重要】上記の数値データだけでなく、先に提示したGCS資料（報告書）の内容も必ず回答に反映すること。"
+                    "数値の背景・原因・考察が報告書に含まれている。数値だけの回答は禁止。\n"
+                )
 
         # 過去事例があればシステムプロンプトに注入
         if past_qa_context:

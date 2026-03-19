@@ -142,6 +142,7 @@ root_agent = LlmAgent(
 def build_root_agent(
     company: str = "",
     bq_schema: str = "",
+    gcs_docs: str = "",
     knowledge: str = "",
     prompts: str = "",
 ) -> LlmAgent:
@@ -157,6 +158,14 @@ def build_root_agent(
         company_context += f"\n\n対象企業: {company}\n"
     if bq_schema:
         company_context += f"\nBigQueryスキーマ:\n{bq_schema}\n"
+    if gcs_docs:
+        company_context += (
+            "\n【GCS資料（報告書・分析レポート — 必ず回答に反映すること）】\n"
+            "※以下の資料には数値の背景・原因・考察が含まれている。\n"
+            "※数値データ（BigQuery）と合わせて、資料の内容も必ず踏まえて回答すること。\n"
+            "※数値だけの回答は不十分。資料に書かれた背景・要因・提言も含めること。\n"
+            f"{gcs_docs}\n"
+        )
     if knowledge:
         company_context += f"\n企業前提知識:\n{knowledge}\n"
     if prompts:
