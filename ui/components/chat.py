@@ -225,6 +225,7 @@ def render_chat(selected_company: str, cfg: CloudConfig, base_dir: str) -> None:
         st.session_state.pop("pending_prompt", None)
         st.session_state.pop("pending_display", None)
         st.session_state.pop("pending_supplement", None)
+        st.session_state.pop("pending_data_source", None)
         st.rerun()
 
     client  = _get_client()
@@ -316,17 +317,20 @@ def _render_left_column(
     if "pending_prompt" in st.session_state:
         pending_prompt  = st.session_state.pop("pending_prompt")
         pending_display = st.session_state.pop("pending_display", None)
+        pending_data_source = st.session_state.pop("pending_data_source", "all")
 
         if pending_prompt and str(pending_prompt).strip():
             display_text = pending_display if pending_display and str(pending_display).strip() else pending_prompt
             with st.chat_message("user"):
                 st.markdown(display_text)
             is_smart_card = pending_display is not None
+            # データソースフィルタ適用
+            filtered_ctx = _filter_data_ctx(data_ctx, pending_data_source) if is_smart_card else data_ctx
             _execute_main_phase(
                 prompt=pending_prompt,
                 display=display_text,
                 memory=memory, engine=engine,
-                data_ctx=data_ctx, selected_company=selected_company,
+                data_ctx=filtered_ctx, selected_company=selected_company,
                 is_smart_card=is_smart_card,
             )
 
@@ -369,6 +373,72 @@ def _render_left_column(
 # ============================================================
 
 _KYNDRYL = "#D41F3C"
+
+
+def _filter_data_ctx(data_ctx: DataContext, data_source: str) -> DataContext:
+    """
+    data_sourceの指定に従ってdata_ctxをフィルタしたコピーを返す。
+    元のdata_ctxは変更しない。
+
+    data_source の値:
+      "all" or "" → フィルタなし
+      "bq"       → BigQueryのみ（GCS・ローカル非構造化を空に）
+      "gcs"      → GCSのみ（BQ・ローカル構造化を空に）
+      "bq+gcs"   → BQとGCS（ローカルを空に）
+      "gcs:keyword" → GCSの中でファイル名にkeywordを含むもののみ
+      "bq:keyword"  → BQスキーマの中でテーブル名にkeywordを含むもののみ
+    """
+    if not data_source or data_source == "all":
+        return data_ctx
+
+    from domain.models import CloudDataResult
+    from orchestration.agents.data_agent import DataContext as DC
+
+    # ベース値
+    bq_result = data_ctx.bq_result
+    gcs_result = data_ctx.gcs_result
+    assets = data_ctx.assets
+
+    empty_cloud = CloudDataResult(content="", is_connected=False)
+
+    if data_source == "bq":
+        gcs_result = empty_cloud
+    elif data_source == "gcs":
+        bq_result = empty_cloud
+    elif data_source == "bq+gcs":
+        pass  # 両方そのまま
+    elif data_source.startswith("gcs:"):
+        keyword = data_source[4:].strip()
+        if keyword and gcs_result.content:
+            # [GCS: filename] タグで分割し、キーワードを含むファイルだけ残す
+            import re
+            blocks = re.split(r'(?=\[GCS: )', gcs_result.content)
+            filtered = [b for b in blocks if keyword in b]
+            gcs_result = CloudDataResult(
+                content="".join(filtered),
+                is_connected=gcs_result.is_connected,
+            )
+        bq_result = empty_cloud
+    elif data_source.startswith("bq:"):
+        keyword = data_source[3:].strip()
+        if keyword and bq_result.content:
+            # スキーマテキストからキーワードを含むテーブルブロックだけ残す
+            import re
+            blocks = re.split(r'(?=Dataset:)', bq_result.content)
+            filtered = [b for b in blocks if keyword in b]
+            bq_result = CloudDataResult(
+                content="".join(filtered),
+                is_connected=bq_result.is_connected,
+            )
+        gcs_result = empty_cloud
+
+    return DC(
+        assets=assets,
+        bq_result=bq_result,
+        gcs_result=gcs_result,
+        chat_disabled=data_ctx.chat_disabled,
+    )
+
 
 def _render_smart_cards(cards: list[dict[str, Any]]) -> None:
     if not cards:
@@ -415,6 +485,7 @@ def _render_smart_cards(cards: list[dict[str, Any]]) -> None:
                         display_label = f"{icon} {title}" if icon else title
                         st.session_state["pending_prompt"] = prompt_template
                         st.session_state["pending_display"] = display_label
+                        st.session_state["pending_data_source"] = card.get("data_source", "all")
                         st.rerun()
 
 

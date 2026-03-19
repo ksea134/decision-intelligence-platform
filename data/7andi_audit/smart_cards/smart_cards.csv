@@ -1,6 +1,6 @@
-企業コード,コード,アイコン,タイトル
-7andi_audit,recent,⚡,週間ニュース
-7andi_audit,notable,👁,気になる兆候
-7andi_audit,alert,🚨,要注意トピック
-7andi_audit,kpi,📊,要チェックKPI
-7andi_audit,hint,💡,テーマの発掘
+企業コード,コード,アイコン,タイトル,データソース
+7andi_audit,recent,⚡,週間ニュース,all
+7andi_audit,notable,👁,気になる兆候,all
+7andi_audit,alert,🚨,要注意トピック,all
+7andi_audit,kpi,📊,要チェックKPI,all
+7andi_audit,hint,💡,テーマの発掘,all

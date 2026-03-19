@@ -1,6 +1,6 @@
-企業コード,コード,アイコン,タイトル
-test03,recent,⚡,週間ニュース
-test03,notable,👁,気になる兆候
-test03,alert,🚨,要注意トピック
-test03,kpi,📊,要チェックKPI
-test03,hint,💡,テーマの発掘
+企業コード,コード,アイコン,タイトル,データソース
+test03,recent,⚡,週間ニュース,all
+test03,notable,👁,気になる兆候,all
+test03,alert,🚨,要注意トピック,all
+test03,kpi,📊,要チェックKPI,all
+test03,hint,💡,テーマの発掘,all

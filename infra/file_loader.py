@@ -131,6 +131,7 @@ def load_smart_cards(smart_cards_dir: str) -> list[dict[str, Any]]:
                     "icon": row.get("アイコン", "").strip(),
                     "title": row.get("タイトル", "").strip(),
                     "prompt_template": prompt_template,
+                    "data_source": row.get("データソース", "all").strip() or "all",
                 })
     except Exception as exc:
         logger.error("smart_cards.csv read error: %s", exc)
