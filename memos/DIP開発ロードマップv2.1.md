@@ -1,7 +1,7 @@
 # DIP開発ロードマップ v2.1
 
 > 作成日: 2026-03-17
-> 更新日: 2026-03-19
+> 更新日: 2026-03-20
 
 ---
 
@@ -41,6 +41,18 @@
 | **GCP Project** | `decision-support-ai` |
 | **Python Version** | 3.11 |
 
+### 事業フェーズとPhaseの対応（2026-03-20追加）
+
+DIPの開発・展開は大きく3つの事業フェーズに分かれる。各Phaseはこの事業フェーズに紐づく。
+
+| 事業フェーズ | 内容 | 対応するPhase | AI Ops |
+|-------------|------|--------------|--------|
+| **1. 開発・検証** | 社内で作って形にする。機能開発・バグ修正・デモ準備 | Phase 0〜4（← 今ここ） | — |
+| **2. PoC・実証実験** | 個別のお客様にお試しで使ってもらい評価を受ける。エンタープライズUI・本番インフラが必要 | Phase 5〜6 + AI Ops A・B | Phase A: ログ基盤（PoC開始前に必須）、Phase B: 監視・アラート（PoC中の障害即対応） |
+| **3. 本番運用** | 正式契約、継続的・永続的に使ってもらう。SLA保証・コスト管理・品質評価が必要 | Phase 7〜8 + AI Ops C・D | Phase C: コスト管理ダッシュボード、Phase D: 回答品質自動評価・Human in the Loop |
+
+> **注意**: 「本番機」「エンタープライズ版」はPoC段階（事業フェーズ2）から必要になるが、PoCはあくまで評価目的であり、本番運用（事業フェーズ3）とは位置づけが異なる。
+
 ### ロードマップサマリー
 
 | Phase | 名称 | 期間 | ステータス | 備考 |
@@ -51,9 +63,12 @@
 | 3 | Vertex AI Search統合 | 2週間 | ✅ 完了 | v3.6.1-stable |
 | 4A | Agent Builder基盤 | 2週間 | ✅ 完了 | ADK統合、v4.0.0-stable |
 | 4B | エコシステム連携 | 2週間 | 🔶 一部完了 | Gemini Flash/Pro使い分け完了。Model Garden連携はPhase 5後 |
-| 5 | エンタープライズUI移行 | 3週間 | ⬜ 未着手 | Cloud Run + IAP |
-| 6 | Governance層実装 | 2週間 | ⬜ 未着手 | Dataplex |
-| 7 | Observability & FinOps | 2週間 | ⬜ 未着手 | Cloud Monitoring |
+| 5 | エンタープライズUI移行 | 3週間 | ⬜ 未着手 | Cloud Run + IAP。**AI Ops Phase Aと同時実装** |
+| 6 | Governance層実装 | 2週間 | ⬜ 未着手 | Dataplex。PoC開始前に完了 |
+| 7A | AI Ops: ログ基盤 | — | ⬜ 未着手 | **Phase 5と同時**。Cloud Logging/Trace連携 |
+| 7B | AI Ops: 監視・アラート | — | ⬜ 未着手 | **Phase 5完了直後**。Cloud Monitoring/Alerting |
+| 7C | AI Ops: コスト管理 | — | ⬜ 未着手 | 運用安定後。Billing Export + Looker |
+| 7D | AI Ops: 品質評価 | — | ⬜ 未着手 | 中長期。Vertex AI Evaluation + Human in the Loop |
 | 8 | 高度機能（InlineViz等） | 2週間 | ⬜ 未着手 | 文中描画 |
 
 **総開発期間**: 約18週間（4.5ヶ月）
