@@ -63,7 +63,7 @@ DIPの開発・展開は大きく3つの事業フェーズに分かれる。各P
 | 3 | Vertex AI Search統合 | 2週間 | ✅ 完了 | v3.6.1-stable |
 | 4A | Agent Builder基盤 | 2週間 | ✅ 完了 | ADK統合、v4.0.0-stable |
 | 4B | エコシステム連携 | 2週間 | 🔶 一部完了 | Gemini Flash/Pro使い分け完了。Model Garden連携はPhase 5後 |
-| 5 | エンタープライズUI移行 | 3週間 | ⬜ 未着手 | Cloud Run + IAP。**AI Ops Phase Aと同時実装** |
+| 5 | エンタープライズUI移行 | 3週間 | 🔄 一部完了 | Cloud Runデプロイ済み・IAP設定完了（2026-03-20）。残作業: カスタムドメイン設定、テスト全28項目実行、旧コード整理 |
 | 6 | Governance層実装 | 2週間 | ⬜ 未着手 | Dataplex。PoC開始前に完了 |
 | 7A | AI Ops: ログ基盤 | — | ⬜ 未着手 | **Phase 5と同時**。Cloud Logging/Trace連携 |
 | 7B | AI Ops: 監視・アラート | — | ⬜ 未着手 | **Phase 5完了直後**。Cloud Monitoring/Alerting |

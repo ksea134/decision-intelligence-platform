@@ -13,8 +13,12 @@ import sys
 # プロジェクトルートをパスに追加（既存コードのimportを維持）
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
+import os
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from backend.ops.logging_config import setup_logging
 
 # ログ設定（アプリ全体でINFO以上を出力）
@@ -46,3 +50,8 @@ app.include_router(companies_router)
 app.include_router(smart_cards_router)
 app.include_router(chat_router)
 app.include_router(supplement_router)
+
+# 静的ファイル配信（Next.js静的エクスポート）
+static_dir = Path(__file__).parent.parent / "static"
+if static_dir.exists():
+    app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")

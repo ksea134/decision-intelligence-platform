@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: "export",  // 静的エクスポート（Cloud Runで配信）
 };
 
 export default nextConfig;
