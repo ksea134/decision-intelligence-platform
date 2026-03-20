@@ -22,18 +22,21 @@ interface MessageContentProps {
  * メッセージ内容を描画する。
  * segments がある場合はテキストとチャートを交互に表示。
  * segments がない場合は fallbackText をマークダウンとして表示。
+ * chat-mdクラスでStreamlit版準拠のスタイル（見出し白、太字イエロー）を適用。
  */
 export default function MessageContent({ segments, fallbackText }: MessageContentProps) {
   if (!segments || segments.length === 0) {
     return (
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-        {fallbackText}
-      </ReactMarkdown>
+      <div className="chat-md">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          {fallbackText}
+        </ReactMarkdown>
+      </div>
     );
   }
 
   return (
-    <>
+    <div className="chat-md">
       {segments.map((seg, i) => {
         if (seg.type === "text" && seg.content) {
           return (
@@ -52,6 +55,6 @@ export default function MessageContent({ segments, fallbackText }: MessageConten
         }
         return null;
       })}
-    </>
+    </div>
   );
 }

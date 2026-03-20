@@ -154,6 +154,8 @@ export async function fetchSupplement(params: {
   display_text: string;
   company_display_name: string;
   company_folder_name: string;
+  project_id?: string;
+  gcs_bucket?: string;
 }): Promise<SupplementResult> {
   const res = await fetch(`${API_BASE}/api/supplement`, {
     method: "POST",

@@ -6,12 +6,15 @@ import { Company, fetchCompanies } from "@/lib/api";
 interface SidebarProps {
   selectedCompany: Company | null;
   onSelectCompany: (company: Company) => void;
+  onGcpConfigChange: (projectId: string, gcsBucket: string) => void;
   collapsed: boolean;
   onToggle: () => void;
 }
 
-export default function Sidebar({ selectedCompany, onSelectCompany, collapsed, onToggle }: SidebarProps) {
+export default function Sidebar({ selectedCompany, onSelectCompany, onGcpConfigChange, collapsed, onToggle }: SidebarProps) {
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [projectId, setProjectId] = useState("decision-support-ai");
+  const [gcsBucket, setGcsBucket] = useState("dsa-knowledge-base");
 
   useEffect(() => {
     fetchCompanies().then(setCompanies);
@@ -40,13 +43,15 @@ export default function Sidebar({ selectedCompany, onSelectCompany, collapsed, o
         <label className="text-xs text-gray-400 mb-1">☁️ クラウド接続先</label>
         <input
           type="text"
-          defaultValue="decision-support-ai"
+          value={projectId}
+          onChange={(e) => { setProjectId(e.target.value); onGcpConfigChange(e.target.value, gcsBucket); }}
           placeholder="GCP Project ID"
           className="bg-gray-800 text-white text-xs rounded px-2 py-1.5 mb-1 border border-gray-600 focus:border-blue-500 focus:outline-none"
         />
         <input
           type="text"
-          defaultValue="dsa-knowledge-base"
+          value={gcsBucket}
+          onChange={(e) => { setGcsBucket(e.target.value); onGcpConfigChange(projectId, e.target.value); }}
           placeholder="GCS Bucket Name"
           className="bg-gray-800 text-white text-xs rounded px-2 py-1.5 mb-4 border border-gray-600 focus:border-blue-500 focus:outline-none"
         />

@@ -29,6 +29,48 @@
   line-height: 1.7;
 }
 
+/* メインチャットエリアのMarkdownスタイル（Streamlit版準拠） */
+.chat-md h1, .chat-md h2, .chat-md h3 {
+  color: #ffffff;
+  font-weight: 700;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+.chat-md h1 { font-size: 1.25rem; }
+.chat-md h2 { font-size: 1.1rem; }
+.chat-md h3 { font-size: 1rem; }
+.chat-md strong, .chat-md b {
+  color: var(--accent);
+}
+.chat-md p {
+  margin-bottom: 0.5rem;
+  line-height: 1.7;
+}
+.chat-md ul, .chat-md ol {
+  margin-left: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+.chat-md li {
+  margin-bottom: 0.25rem;
+  line-height: 1.7;
+}
+.chat-md table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+.chat-md th, .chat-md td {
+  border: 1px solid rgba(255,255,255,0.15);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+.chat-md th {
+  background: rgba(255,255,255,0.05);
+  color: var(--accent);
+  font-weight: 600;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

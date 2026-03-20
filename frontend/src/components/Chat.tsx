@@ -19,13 +19,17 @@ interface Message {
   segments?: Segment[] | null;
   userPrompt?: string;
   flowSteps?: any[];
+  infographicHtml?: string;
+  infographicData?: any;
 }
 
 interface ChatProps {
   company: Company;
+  projectId: string;
+  gcsBucket: string;
 }
 
-export default function Chat({ company }: ChatProps) {
+export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -100,6 +104,8 @@ export default function Chat({ company }: ChatProps) {
         source,
         smart_card_id: smartCardId,
         data_source: dataSource || "all",
+        project_id: projectId,
+        gcs_bucket: gcsBucket,
       },
       {
         onText: (text) => {
@@ -149,9 +155,28 @@ export default function Chat({ company }: ChatProps) {
             display_text: finalText,
             company_display_name: company.display_name,
             company_folder_name: company.folder_name,
+            project_id: projectId,
+            gcs_bucket: gcsBucket,
           }).then((result) => {
             if (result.thought_process) {
               setThoughtProcess(result.thought_process);
+            }
+            // インフォグラフィックを最新のアシスタントメッセージに追加
+            if (result.infographic_html) {
+              setMessages((prev) => {
+                const updated = [...prev];
+                for (let i = updated.length - 1; i >= 0; i--) {
+                  if (updated[i].role === "assistant") {
+                    updated[i] = {
+                      ...updated[i],
+                      infographicHtml: result.infographic_html,
+                      infographicData: result.infographic_data,
+                    };
+                    break;
+                  }
+                }
+                return updated;
+              });
             }
             setSupplementLoading(false);
           }).catch(() => {
@@ -198,16 +223,30 @@ export default function Chat({ company }: ChatProps) {
             <span className="text-xs text-gray-400 tracking-wider">DIP | Decision Intelligence Platform</span>
             <h2 className="text-lg font-bold text-white">{company.display_name}</h2>
           </div>
-          <button
-            onClick={handleNewChat}
-            className="text-sm text-gray-300 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors"
-          >
-            新規チャット
-          </button>
+          <div className="flex items-center gap-3">
+            {isLoading && (
+              <div className="flex items-center gap-2 text-gray-400">
+                <div className="w-3 h-3 rounded-full border-2 border-gray-500 border-t-green-500 animate-spin flex-shrink-0" />
+                <span className="text-xs">{status}（{elapsedSec}秒）</span>
+              </div>
+            )}
+            {supplementLoading && (
+              <div className="flex items-center gap-2 text-gray-400">
+                <div className="w-3 h-3 rounded-full border-2 border-gray-500 border-t-green-500 animate-spin flex-shrink-0" />
+                <span className="text-xs">補足情報を整理しています…</span>
+              </div>
+            )}
+            <button
+              onClick={handleNewChat}
+              className="text-sm text-gray-300 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors"
+            >
+              新規チャット
+            </button>
+          </div>
         </div>
 
         {/* メッセージエリア */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 mx-auto max-w-4xl w-full">
           <SmartCards
             folderName={company.folder_name}
             onCardClick={handleSmartCardClick}
@@ -233,6 +272,48 @@ export default function Chat({ company }: ChatProps) {
                       fallbackText={msg.content}
                     />
                     <Citations files={msg.files || null} />
+                    {msg.infographicHtml && (() => {
+                      const d = msg.infographicData || {};
+                      const n = Math.max(
+                        (d.insights || []).length,
+                        (d.actions || []).length,
+                        5,
+                      );
+                      const dynamicH = Math.max(60 + n * 100 + 120, 500);
+                      return (
+                        <div className="mt-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-xs text-gray-400">インフォグラフィック</p>
+                            <button
+                              onClick={() => {
+                                const iframe = document.querySelector(`#infographic-${i}`) as HTMLIFrameElement;
+                                if (!iframe?.contentDocument?.body) return;
+                                import("html2canvas").then(({ default: html2canvas }) => {
+                                  html2canvas(iframe.contentDocument!.body, {
+                                    backgroundColor: "#0e1117",
+                                    scale: 2,
+                                  }).then((canvas) => {
+                                    const a = document.createElement("a");
+                                    a.download = `infographic_${new Date().toISOString().slice(0,10)}.png`;
+                                    a.href = canvas.toDataURL("image/png");
+                                    a.click();
+                                  });
+                                });
+                              }}
+                              className="text-xs text-blue-400 hover:text-blue-300"
+                            >
+                              PNG保存
+                            </button>
+                          </div>
+                          <iframe
+                            id={`infographic-${i}`}
+                            srcDoc={msg.infographicHtml}
+                            className="w-full rounded border border-gray-700"
+                            style={{ height: `${dynamicH}px` }}
+                          />
+                        </div>
+                      );
+                    })()}
                     <Supplement
                       userPrompt={msg.userPrompt || ""}
                       displayText={msg.content}
@@ -253,9 +334,11 @@ export default function Chat({ company }: ChatProps) {
               <div className="max-w-3xl rounded-xl px-4 py-3 bg-gray-800 text-gray-100">
                 {streamingText ? (
                   <>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {streamingText}
-                    </ReactMarkdown>
+                    <div className="chat-md">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {streamingText}
+                      </ReactMarkdown>
+                    </div>
                     {streamingFiles && <Citations files={streamingFiles} />}
                   </>
                 ) : (
@@ -319,6 +402,8 @@ export default function Chat({ company }: ChatProps) {
       <div className="flex-[1] border-l border-gray-700 bg-gray-900 min-w-0">
         <RightColumn
           folderName={company.folder_name}
+          projectId={projectId}
+          gcsBucket={gcsBucket}
           flowSteps={flowSteps}
           thoughtProcess={thoughtProcess}
         />

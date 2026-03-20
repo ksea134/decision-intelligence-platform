@@ -13,6 +13,8 @@ interface FlowStep {
 
 interface RightColumnProps {
   folderName: string;
+  projectId: string;
+  gcsBucket: string;
   flowSteps: FlowStep[];
   thoughtProcess: string;
 }
@@ -43,14 +45,14 @@ function Expander({ title, defaultOpen = false, children }: { title: string; def
   );
 }
 
-export default function RightColumn({ folderName, flowSteps, thoughtProcess }: RightColumnProps) {
+export default function RightColumn({ folderName, projectId, gcsBucket, flowSteps, thoughtProcess }: RightColumnProps) {
   const [assets, setAssets] = useState<CompanyAssets | null>(null);
 
   useEffect(() => {
     if (folderName) {
-      fetchCompanyAssets(folderName).then(setAssets);
+      fetchCompanyAssets(folderName, projectId, gcsBucket).then(setAssets);
     }
-  }, [folderName]);
+  }, [folderName, projectId, gcsBucket]);
 
   if (!assets) return null;
 
