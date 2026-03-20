@@ -3,6 +3,30 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --accent: #D2FF00;
+}
+
+/* 右カラムのMarkdown: 見出しと太字にアクセントカラー */
+.right-column-md h1,
+.right-column-md h2,
+.right-column-md h3 {
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+.right-column-md strong,
+.right-column-md b {
+  color: var(--accent);
+}
+.right-column-md p {
+  margin-bottom: 0.5rem;
+  line-height: 1.7;
+}
+.right-column-md li {
+  margin-bottom: 0.3rem;
+  line-height: 1.7;
 }
 
 @theme inline {

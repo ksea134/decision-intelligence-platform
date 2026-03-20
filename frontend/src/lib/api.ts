@@ -22,6 +22,7 @@ export interface ChatRequest {
   company_folder_name: string;
   source: "chat" | "smart_card";
   smart_card_id?: string;
+  data_source?: string;
   project_id?: string;
   gcs_bucket?: string;
 }
@@ -41,6 +42,24 @@ export async function fetchSmartCards(folderName: string): Promise<SmartCard[]> 
   return res.json();
 }
 
+export interface CompanyAssets {
+  intro_text: string;
+  knowledge_text: string;
+  knowledge_files: string[];
+  prompt_text: string;
+  bq: { is_connected: boolean; is_error: boolean; table_count: number; tables: string[]; error_detail: string };
+  gcs: { is_connected: boolean; is_error: boolean; file_count: number; files: string[]; error_detail: string };
+  local: { structured_files: string[]; unstructured_files: string[] };
+}
+
+export async function fetchCompanyAssets(folderName: string, projectId?: string, gcsBucket?: string): Promise<CompanyAssets> {
+  const params = new URLSearchParams({ folder_name: folderName });
+  params.set("project_id", projectId || "decision-support-ai");
+  params.set("gcs_bucket", gcsBucket || "dsa-knowledge-base");
+  const res = await fetch(`${API_BASE}/api/company-assets?${params}`);
+  return res.json();
+}
+
 /**
  * SSEストリーミングでチャットAPIを呼び出す。
  * コールバックでイベントを受信する。
@@ -49,8 +68,9 @@ export function streamChat(
   req: ChatRequest,
   callbacks: {
     onText: (text: string) => void;
-    onStatus: (message: string) => void;
+    onStatus: (message: string, result?: string) => void;
     onFiles: (files: FilesData) => void;
+    onFlowSteps: (steps: any[]) => void;
     onDone: (elapsed: number, displayText: string, segments?: any[]) => void;
     onError: (message: string) => void;
   },
@@ -88,10 +108,13 @@ export function streamChat(
               callbacks.onText(data.text);
               break;
             case "status":
-              callbacks.onStatus(data.message);
+              callbacks.onStatus(data.message, data.result);
               break;
             case "files":
               callbacks.onFiles(data);
+              break;
+            case "flow_steps":
+              callbacks.onFlowSteps(data.steps);
               break;
             case "done":
               callbacks.onDone(data.elapsed_seconds, data.display_text, data.segments);
@@ -151,4 +174,31 @@ export async function fetchDeepDive(params: {
     body: JSON.stringify(params),
   });
   return res.json();
+}
+
+export interface HistoryEntry {
+  id: string;
+  text: string;
+  ts: string;
+}
+
+export async function fetchHistory(company: string): Promise<HistoryEntry[]> {
+  const res = await fetch(`${API_BASE}/api/history?company=${encodeURIComponent(company)}`);
+  return res.json();
+}
+
+export async function addHistory(company: string, text: string): Promise<void> {
+  await fetch(`${API_BASE}/api/history/add`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ company, text }),
+  });
+}
+
+export async function deleteHistory(company: string, entryId: string): Promise<void> {
+  await fetch(`${API_BASE}/api/history/delete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ company, entry_id: entryId }),
+  });
 }

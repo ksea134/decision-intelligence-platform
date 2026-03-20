@@ -7,12 +7,15 @@ import { Company } from "@/lib/api";
 
 export default function Home() {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
     <div className="flex h-screen">
       <Sidebar
         selectedCompany={selectedCompany}
         onSelectCompany={setSelectedCompany}
+        collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
       <main className="flex-1 bg-gray-950">
         {selectedCompany ? (

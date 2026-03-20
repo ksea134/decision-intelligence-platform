@@ -299,12 +299,19 @@ class ReasoningEngine:
                 logger.warning("[Phase1] テーブルが見つかりません")
                 return ""
 
-            # 全テーブルからデータを取得してCSVに結合
+            # 全テーブルからデータを取得してCSVに結合（30秒タイムアウト）
+            import time as _time
+            _bq_start = _time.time()
+            _BQ_TIMEOUT = 30
+
             all_csv_parts = []
             first_sql = None
             first_result = None
 
             for dataset, table in tables:
+                if _time.time() - _bq_start > _BQ_TIMEOUT:
+                    logger.warning("[Phase1] タイムアウト（%d秒超過）。残りテーブルをスキップ", _BQ_TIMEOUT)
+                    break
                 sql = f"SELECT * FROM `{dataset}`.`{table}` LIMIT 100"
                 logger.warning("[Phase1] SQL実行: %s", sql)
 

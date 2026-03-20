@@ -58,7 +58,12 @@ def query_bigquery() -> str:
     logger.warning("[ADK Tool] query_bigquery called: SELECT * 固定方式")
     _last_bq_tables = []
 
+    _BQ_TIMEOUT_SEC = 30  # タイムアウト（秒）
+
     try:
+        import time as _time
+        _start = _time.time()
+
         schema_text = _data_ctx.bq_result.content
         tables = re.findall(r"Dataset:\s*(\S+)[\s\S]*?Table:\s*(\S+)", schema_text)
         if not tables:
@@ -66,6 +71,10 @@ def query_bigquery() -> str:
 
         all_parts = []
         for dataset, table in tables:
+            if _time.time() - _start > _BQ_TIMEOUT_SEC:
+                logger.warning("[ADK Tool] タイムアウト（%d秒超過）。残り%dテーブルをスキップ",
+                               _BQ_TIMEOUT_SEC, len(tables) - len(_last_bq_tables))
+                break
             _last_bq_tables.append(table)
             sql = f"SELECT * FROM `{dataset}`.`{table}` LIMIT 100"
             try:
