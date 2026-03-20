@@ -112,3 +112,43 @@ export function streamChat(
 
   return controller;
 }
+
+export interface SupplementResult {
+  thought_process: string;
+  infographic_html: string;
+  infographic_data: any;
+  elapsed_seconds: number;
+  error?: string;
+}
+
+export interface DeepDiveResult {
+  questions: string[];
+  error?: string;
+}
+
+export async function fetchSupplement(params: {
+  user_prompt: string;
+  display_text: string;
+  company_display_name: string;
+  company_folder_name: string;
+}): Promise<SupplementResult> {
+  const res = await fetch(`${API_BASE}/api/supplement`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  return res.json();
+}
+
+export async function fetchDeepDive(params: {
+  user_prompt: string;
+  display_text: string;
+  company_folder_name: string;
+}): Promise<DeepDiveResult> {
+  const res = await fetch(`${API_BASE}/api/deep-dive`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  return res.json();
+}

@@ -20,6 +20,7 @@ from backend.api.health import router as health_router
 from backend.api.companies import router as companies_router
 from backend.api.smart_cards import router as smart_cards_router
 from backend.api.chat import router as chat_router
+from backend.api.supplement import router as supplement_router
 
 app = FastAPI(
     title="DIP API",
@@ -40,3 +41,4 @@ app.include_router(health_router)
 app.include_router(companies_router)
 app.include_router(smart_cards_router)
 app.include_router(chat_router)
+app.include_router(supplement_router)

@@ -7,12 +7,14 @@ import { Company, SmartCard, FilesData, streamChat } from "@/lib/api";
 import SmartCards from "./SmartCards";
 import Citations from "./Citations";
 import MessageContent, { Segment } from "./MessageContent";
+import Supplement from "./Supplement";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
   files?: FilesData | null;
   segments?: Segment[] | null;
+  userPrompt?: string;  // 元の質問文（Supplement用）
 }
 
 interface ChatProps {
@@ -82,6 +84,7 @@ export default function Chat({ company }: ChatProps) {
               content: displayText || accumulatedText,
               files: streamingFiles,
               segments: segments || null,
+              userPrompt: question,
             },
           ]);
           setStreamingText("");
@@ -146,6 +149,13 @@ export default function Chat({ company }: ChatProps) {
                     fallbackText={msg.content}
                   />
                   <Citations files={msg.files || null} />
+                  <Supplement
+                    userPrompt={msg.userPrompt || ""}
+                    displayText={msg.content}
+                    companyDisplayName={company.display_name}
+                    companyFolderName={company.folder_name}
+                    onDeepDiveClick={(q) => sendMessage(q, "chat")}
+                  />
                 </>
               ) : (
                 <p>{msg.content}</p>
