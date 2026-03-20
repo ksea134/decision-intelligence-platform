@@ -6,11 +6,13 @@ import remarkGfm from "remark-gfm";
 import { Company, SmartCard, FilesData, streamChat } from "@/lib/api";
 import SmartCards from "./SmartCards";
 import Citations from "./Citations";
+import MessageContent, { Segment } from "./MessageContent";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
   files?: FilesData | null;
+  segments?: Segment[] | null;
 }
 
 interface ChatProps {
@@ -72,13 +74,14 @@ export default function Chat({ company }: ChatProps) {
         onFiles: (files) => {
           setStreamingFiles(files);
         },
-        onDone: (elapsed, displayText) => {
+        onDone: (elapsed, displayText, segments) => {
           setMessages((prev) => [
             ...prev,
             {
               role: "assistant",
               content: displayText || accumulatedText,
               files: streamingFiles,
+              segments: segments || null,
             },
           ]);
           setStreamingText("");
@@ -138,9 +141,10 @@ export default function Chat({ company }: ChatProps) {
             >
               {msg.role === "assistant" ? (
                 <>
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {msg.content}
-                  </ReactMarkdown>
+                  <MessageContent
+                    segments={msg.segments || null}
+                    fallbackText={msg.content}
+                  />
                   <Citations files={msg.files || null} />
                 </>
               ) : (

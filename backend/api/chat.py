@@ -230,12 +230,17 @@ async def chat(request: ChatRequest) -> EventSourceResponse:
                 }),
             }
 
+            # --- InlineVizセグメント分割 ---
+            from domain.viz_parser import parse_viz_segments
+            segments = parse_viz_segments(parsed.display_text)
+
             elapsed = round(time.time() - start_ts, 1)
             yield {
                 "event": "done",
                 "data": json.dumps({
                     "elapsed_seconds": elapsed,
                     "display_text": parsed.display_text,
+                    "segments": segments,
                 }),
             }
 

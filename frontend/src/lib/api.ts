@@ -51,7 +51,7 @@ export function streamChat(
     onText: (text: string) => void;
     onStatus: (message: string) => void;
     onFiles: (files: FilesData) => void;
-    onDone: (elapsed: number, displayText: string) => void;
+    onDone: (elapsed: number, displayText: string, segments?: any[]) => void;
     onError: (message: string) => void;
   },
 ): AbortController {
@@ -94,7 +94,7 @@ export function streamChat(
               callbacks.onFiles(data);
               break;
             case "done":
-              callbacks.onDone(data.elapsed_seconds, data.display_text);
+              callbacks.onDone(data.elapsed_seconds, data.display_text, data.segments);
               break;
             case "error":
               callbacks.onError(data.message);

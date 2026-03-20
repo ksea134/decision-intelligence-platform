@@ -59,6 +59,7 @@ def build_system_prompt(
         _build_persona(company)
         + _build_language_rules()
         + _build_intent_section(intent)
+        + _build_viz_tag_instruction()
         + _build_files_tag_instruction()
         + _build_sql_rules(bq_connected)
         + _build_knowledge_section(knowledge)
@@ -134,6 +135,28 @@ def _build_language_rules() -> str:
         "【言語ルール】\n"
         "- ユーザーの質問が日本語なら日本語で、英語なら英語で回答してください。\n"
         "- 回答にコードブロック（```tool_code、```python等）を含めないでください。自然言語のみで回答すること。\n\n"
+    )
+
+
+def _build_viz_tag_instruction() -> str:
+    return (
+        "【チャート描画タグ（任意）】\n"
+        "回答の中で、数値データをチャートで可視化すると理解が深まる箇所には、\n"
+        "以下の形式で <viz> タグを挿入してください。\n\n"
+        "■ 形式:\n"
+        '<viz type="bar" title="チャートのタイトル">\n'
+        '{"labels": ["ラベル1","ラベル2","ラベル3"], "data": [100,200,150]}\n'
+        "</viz>\n\n"
+        "■ 使えるチャートタイプ:\n"
+        '- type="bar" : 棒グラフ（比較に最適）\n'
+        '- type="line" : 折れ線グラフ（推移・トレンドに最適）\n'
+        '- type="pie" : 円グラフ（構成比に最適）\n\n'
+        "■ ルール:\n"
+        "- チャートは回答の流れの中に自然に配置すること（末尾にまとめない）\n"
+        "- labelsとdataの要素数は必ず一致させること\n"
+        "- dataの値は数値のみ（文字列は不可）\n"
+        "- 1回答あたりチャートは最大3つまで\n"
+        "- チャートが不要な回答では <viz> タグを使わないこと\n\n"
     )
 
 
