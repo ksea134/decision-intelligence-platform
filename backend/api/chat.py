@@ -287,39 +287,22 @@ async def chat(request: ChatRequest) -> EventSourceResponse:
                 yield {"event": "error", "data": json.dumps({"message": "AIからの応答が空でした"})}
                 return
 
-            # --- 出典情報 ---
+            # --- 出典情報（米印方式: LLM自己申告のみ、コード側補完なし） ---
             from domain.response_parser import parse_llm_response
             parsed = parse_llm_response(full_text)
-
-            # BQテーブル名補完
-            bq_tables: list[str] = []
-            if out_data.get("bq_tables"):
-                bq_tables.extend(out_data["bq_tables"])
-            _sql = out_data.get("executed_sql") or parsed.sql or ""
-            if _sql:
-                bq_tables += re.findall(r"FROM\s+`?[\w-]+`?\.`?([\w-]+)`?", _sql, re.IGNORECASE)
-                bq_tables += re.findall(r"JOIN\s+`?[\w-]+`?\.`?([\w-]+)`?", _sql, re.IGNORECASE)
-            if not bq_tables and filtered_ctx.bq_result and filtered_ctx.bq_result.content:
-                schema_tables = re.findall(r"Table:\s*(\S+)", filtered_ctx.bq_result.content)
-                bq_tables.extend(schema_tables)
-
-            existing_bq = {f for f in parsed.files if f.startswith("BQ:")}
-            for t in dict.fromkeys(bq_tables):
-                bq_name = f"BQ:{t}"
-                if bq_name not in existing_bq:
-                    parsed.files.insert(0, bq_name)
-
-            structured = [f for f in parsed.files if f.startswith("BQ:") or f.startswith("LOCAL:")]
-            unstructured = [f for f in parsed.files if f.startswith("GCS:")]
-
-            yield {
-                "event": "files",
-                "data": json.dumps({"structured": structured, "unstructured": unstructured}),
-            }
 
             # --- InlineVizセグメント分割 ---
             from domain.viz_parser import parse_viz_segments
             segments = parse_viz_segments(parsed.display_text)
+
+            # SQL実行ログ情報
+            sql_query = out_data.get("executed_sql") or parsed.sql or ""
+            sql_row_count = 0
+            if out_data.get("sql_result"):
+                try:
+                    sql_row_count = out_data["sql_result"].row_count if hasattr(out_data["sql_result"], "row_count") else out_data["sql_result"].get("row_count", 0)
+                except Exception:
+                    pass
 
             elapsed = round(time.time() - start_ts, 1)
             yield {
@@ -328,6 +311,8 @@ async def chat(request: ChatRequest) -> EventSourceResponse:
                     "elapsed_seconds": elapsed,
                     "display_text": parsed.display_text,
                     "segments": segments,
+                    "sql_query": sql_query,
+                    "sql_row_count": sql_row_count,
                 }),
             }
 

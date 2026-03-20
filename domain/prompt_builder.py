@@ -163,18 +163,21 @@ def _build_viz_tag_instruction() -> str:
 def _build_files_tag_instruction() -> str:
     return (
         "【出典情報の記載ルール（必須）】\n"
-        "回答の末尾に必ず [FILES: ...] タグを記載してください。\n\n"
-        "■ 記載すべき内容:\n"
-        "回答生成に使用したすべてのデータソースを記載:\n"
-        "- BigQueryテーブル: BQ:テーブル名 （例: BQ:production_results, BQ:equipment_alerts）\n"
-        "- GCSドキュメント: GCS:ファイル名 （例: GCS:inspection_report_2026-03-18.txt）\n"
-        "- ローカルファイル: LOCAL:ファイル名 （例: LOCAL:factory_overview.txt）\n\n"
+        "回答本文中でデータを参照した箇所に ※1、※2 のような米印番号を付けてください。\n"
+        "回答の末尾に、米印番号と参照したデータソース名の対応一覧を記載してください。\n\n"
+        "■ 米印のルール:\n"
+        "- 本文中の該当箇所に※1、※2...を挿入する\n"
+        "- 回答末尾に出典一覧を記載する\n"
+        "- 実際に回答の根拠として使ったデータのみを記載する（使っていないデータは書かない）\n\n"
         "■ 記載例:\n"
-        "[FILES: BQ:production_results, BQ:equipment_alerts, GCS:inspection_report_2026-03-18.txt]\n\n"
-        "■ 禁止事項:\n"
-        "- 「なし」は禁止。回答を生成した以上、必ず何かのデータを参照しています。\n"
-        "- 最低1つ以上のデータソースを記載すること。\n"
-        "- 曖昧な記載（「データベース」「ドキュメント」等）は禁止。具体的なテーブル名・ファイル名を記載。\n\n"
+        "Cラインの達成率は50%と低下しています※1。\n"
+        "WLD-003の振動値が基準値を超過※2しており...\n\n"
+        "※1：BQ:production_results\n"
+        "※2：GCS:2026-03-18_C-LINE_WLD-003.txt\n\n"
+        "■ データソース名の形式:\n"
+        "- BigQueryテーブル: BQ:テーブル名\n"
+        "- GCSドキュメント: GCS:ファイル名\n"
+        "- ローカルファイル: LOCAL:ファイル名\n\n"
     )
 
 

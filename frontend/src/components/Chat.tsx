@@ -10,6 +10,8 @@ import MessageContent, { Segment } from "./MessageContent";
 import Supplement from "./Supplement";
 import RightColumn from "./RightColumn";
 import QuestionHistory from "./QuestionHistory";
+import ActionButtons from "./ActionButtons";
+import SqlLog from "./SqlLog";
 import { fetchSupplement, fetchHistory, addHistory, deleteHistory, HistoryEntry } from "@/lib/api";
 
 interface Message {
@@ -21,6 +23,8 @@ interface Message {
   flowSteps?: any[];
   infographicHtml?: string;
   infographicData?: any;
+  sqlQuery?: string;
+  sqlRowCount?: number;
 }
 
 interface ChatProps {
@@ -124,7 +128,7 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
           lastFlowSteps = steps;
           setFlowSteps(steps);
         },
-        onDone: (elapsed, displayText, segments) => {
+        onDone: (elapsed, displayText, segments, sqlQuery, sqlRowCount) => {
           setMessages((prev) => [
             ...prev,
             {
@@ -134,6 +138,8 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
               segments: segments || null,
               userPrompt: question,
               flowSteps: lastFlowSteps,
+              sqlQuery: sqlQuery || "",
+              sqlRowCount: sqlRowCount || 0,
             },
           ]);
           setFlowSteps(lastFlowSteps);
@@ -273,7 +279,7 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
                       segments={msg.segments || null}
                       fallbackText={msg.content}
                     />
-                    <Citations files={msg.files || null} />
+                    <SqlLog sqlQuery={msg.sqlQuery || ""} rowCount={msg.sqlRowCount || 0} />
                     {msg.infographicHtml && (() => {
                       const d = msg.infographicData || {};
                       const n = Math.max(
@@ -284,29 +290,6 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
                       const dynamicH = Math.max(60 + n * 100 + 120, 500);
                       return (
                         <div className="mt-3">
-                          <div className="flex items-center justify-between mb-1">
-                            <p className="text-xs text-gray-400">インフォグラフィック</p>
-                            <button
-                              onClick={() => {
-                                const iframe = document.querySelector(`#infographic-${i}`) as HTMLIFrameElement;
-                                if (!iframe?.contentDocument?.body) return;
-                                import("html2canvas").then(({ default: html2canvas }) => {
-                                  html2canvas(iframe.contentDocument!.body, {
-                                    backgroundColor: "#0e1117",
-                                    scale: 2,
-                                  }).then((canvas) => {
-                                    const a = document.createElement("a");
-                                    a.download = `infographic_${new Date().toISOString().slice(0,10)}.png`;
-                                    a.href = canvas.toDataURL("image/png");
-                                    a.click();
-                                  });
-                                });
-                              }}
-                              className="text-xs text-[#4CDD84] hover:text-[#5FE896]"
-                            >
-                              PNG保存
-                            </button>
-                          </div>
                           <iframe
                             id={`infographic-${i}`}
                             srcDoc={msg.infographicHtml}
@@ -316,6 +299,11 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
                         </div>
                       );
                     })()}
+                    <ActionButtons
+                      question={msg.userPrompt || ""}
+                      answer={msg.content}
+                      companyName={company.display_name}
+                    />
                     <Supplement
                       userPrompt={msg.userPrompt || ""}
                       displayText={msg.content}
@@ -341,7 +329,7 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
                         {streamingText.replace(/```tool_code[\s\S]*?```/g, "").replace(/^tool_code\s*\n(?:print\(.*?\)\n?)*/gm, "").trim()}
                       </ReactMarkdown>
                     </div>
-                    {streamingFiles && <Citations files={streamingFiles} />}
+                    
                   </>
                 ) : (
                   <div className="flex items-center gap-2 text-gray-300">

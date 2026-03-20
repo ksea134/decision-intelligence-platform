@@ -71,7 +71,7 @@ export function streamChat(
     onStatus: (message: string, result?: string) => void;
     onFiles: (files: FilesData) => void;
     onFlowSteps: (steps: any[]) => void;
-    onDone: (elapsed: number, displayText: string, segments?: any[]) => void;
+    onDone: (elapsed: number, displayText: string, segments?: any[], sqlQuery?: string, sqlRowCount?: number) => void;
     onError: (message: string) => void;
   },
 ): AbortController {
@@ -117,7 +117,7 @@ export function streamChat(
               callbacks.onFlowSteps(data.steps);
               break;
             case "done":
-              callbacks.onDone(data.elapsed_seconds, data.display_text, data.segments);
+              callbacks.onDone(data.elapsed_seconds, data.display_text, data.segments, data.sql_query, data.sql_row_count);
               break;
             case "error":
               callbacks.onError(data.message);

@@ -134,7 +134,8 @@ def _clean_display_text(text: str) -> str:
     result = _RE_SQL_PLAIN.sub("", result).strip()
     result = _RE_BQ_QUERY_REF.sub("", result).strip()
     result = _RE_BQ_TAG.sub("", result).strip()
-    result = _RE_CITATION_LINE.sub("", result).strip()
+    # 米印の出典行は本文に残す（F19 Grounding仕様）
+    # result = _RE_CITATION_LINE.sub("", result).strip()
     # 括弧内のSELECT文も除去
     result = re.sub(r"[（(]\s*SELECT\b[^)）]*[;；]\s*[)）]", "", result).strip()
     return result
