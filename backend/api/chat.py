@@ -252,10 +252,7 @@ async def chat(request: ChatRequest) -> EventSourceResponse:
                     token = payload
                     if isinstance(token, str):
                         chunks.append(token)
-                        # tool_codeを含まないチャンクのみリアルタイム送信
-                        partial = "".join(chunks)
-                        if "tool_code" not in partial:
-                            yield {"event": "text", "data": json.dumps({"text": token})}
+                        yield {"event": "text", "data": json.dumps({"text": token})}
                     elif isinstance(token, dict):
                         if "status" in token:
                             yield {"event": "status", "data": json.dumps({"message": token["status"]})}
