@@ -15,6 +15,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from backend.ops.logging_config import setup_logging
+
+# ログ設定（アプリ全体でINFO以上を出力）
+setup_logging()
 
 from backend.api.health import router as health_router
 from backend.api.companies import router as companies_router

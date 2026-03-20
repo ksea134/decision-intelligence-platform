@@ -34,6 +34,8 @@ from sse_starlette.sse import EventSourceResponse
 
 from config.app_config import APP, PATHS
 from config.cloud_config import CloudConfig
+from backend.ops.request_logger import log_request
+from backend.ops.tracing import trace_span
 
 logger = logging.getLogger(__name__)
 
@@ -244,11 +246,30 @@ async def chat(request: ChatRequest) -> EventSourceResponse:
                 }),
             }
 
-            logger.warning("[PERF] /api/chat: %.1f秒, %d文字, 出典%d件",
-                           elapsed, len(parsed.display_text), len(parsed.files))
+            # リクエストログ記録
+            log_request(
+                question=request.question or request.smart_card_id or "",
+                company=request.company_display_name,
+                source=request.source,
+                engine="v1" if is_smart_card else "adk",
+                elapsed_seconds=elapsed,
+                response_length=len(parsed.display_text),
+                files_count=len(parsed.files),
+            )
 
         except Exception as e:
             logger.error("[ERROR] /api/chat: %s", e, exc_info=True)
+            log_request(
+                question=request.question or request.smart_card_id or "",
+                company=request.company_display_name,
+                source=request.source,
+                engine="unknown",
+                elapsed_seconds=round(time.time() - start_ts, 1),
+                response_length=0,
+                files_count=0,
+                status="error",
+                error_message=str(e),
+            )
             yield {"event": "error", "data": json.dumps({"message": str(e)})}
 
     return EventSourceResponse(event_generator())
