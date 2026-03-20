@@ -127,6 +127,9 @@ def _clean_display_text(text: str) -> str:
     [FILES:]タグ・SQLブロック・BigQueryタグ等を除去する。
     """
     result = _RE_FILES_TAG.sub("", text).strip()
+    # tool_codeブロック除去（フェンス付き・なし両対応）
+    result = re.sub(r"```tool_code.*?```", "", result, flags=re.DOTALL).strip()
+    result = re.sub(r"(?m)^tool_code\s*\n(?:print\(.*?\)\n?)*", "", result).strip()
     result = _RE_SQL_BLOCK.sub("", result).strip()
     result = _RE_SQL_PLAIN.sub("", result).strip()
     result = _RE_BQ_QUERY_REF.sub("", result).strip()

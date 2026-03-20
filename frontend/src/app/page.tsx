@@ -20,7 +20,7 @@ export default function Home() {
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
-      <main className="flex-1 bg-gray-950">
+      <main className="flex-1 bg-[#0A0E14]">
         {selectedCompany ? (
           <Chat company={selectedCompany} projectId={projectId} gcsBucket={gcsBucket} />
         ) : (

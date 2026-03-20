@@ -217,10 +217,10 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
 
   return (
     <div className="flex h-screen">
-      {/* 左カラム: チャット（残り全幅） */}
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* 左カラム: チャット — height:100vh flex column, スクロールはbodyに委ねる */}
+      <div className="flex-1 h-screen flex flex-col min-w-0 overflow-y-auto">
         {/* タイトル行 */}
-        <div className="flex items-center justify-between pl-14 pr-6 py-3 border-b border-gray-800">
+        <div className="sticky top-0 z-10 flex items-center justify-between pl-14 pr-6 py-3 border-b border-gray-800 bg-[#0A0E14]">
           <div>
             <span className="text-xs text-gray-400 tracking-wider">DIP | Decision Intelligence Platform</span>
             <h2 className="text-lg font-bold text-white">{company.display_name}</h2>
@@ -248,7 +248,7 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
         </div>
 
         {/* メッセージエリア */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 mx-auto max-w-4xl w-full">
+        <div className="flex-1 p-6 pb-24 space-y-4 mx-auto max-w-4xl w-full">
           <SmartCards
             folderName={company.folder_name}
             onCardClick={handleSmartCardClick}
@@ -258,14 +258,14 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
           {messages.map((msg, i) => (
             <div
               key={i}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              className={msg.role === "user" ? "flex justify-end" : "w-full"}
             >
               <div
-                className={`max-w-3xl rounded-xl px-4 py-3 ${
+                className={
                   msg.role === "user"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-800 text-gray-100"
-                }`}
+                    ? "max-w-3xl rounded-xl px-4 py-3 bg-gray-800 text-white"
+                    : "w-full text-gray-100"
+                }
               >
                 {msg.role === "assistant" ? (
                   <>
@@ -302,7 +302,7 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
                                   });
                                 });
                               }}
-                              className="text-xs text-blue-400 hover:text-blue-300"
+                              className="text-xs text-[#4CDD84] hover:text-[#5FE896]"
                             >
                               PNG保存
                             </button>
@@ -332,13 +332,13 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
           ))}
 
           {isLoading && (
-            <div className="flex justify-start">
-              <div className="max-w-3xl rounded-xl px-4 py-3 bg-gray-800 text-gray-100">
+            <div className="w-full">
+              <div className="w-full text-gray-100">
                 {streamingText ? (
                   <>
                     <div className="chat-md">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {streamingText}
+                        {streamingText.replace(/```tool_code[\s\S]*?```/g, "").replace(/^tool_code\s*\n(?:print\(.*?\)\n?)*/gm, "").trim()}
                       </ReactMarkdown>
                     </div>
                     {streamingFiles && <Citations files={streamingFiles} />}
@@ -365,7 +365,7 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
         </div>
 
         {/* 入力欄 */}
-        <div className="border-t border-gray-700 p-4">
+        <div className="sticky bottom-0 z-10 border-t border-gray-700 p-4 bg-[#0A0E14]">
           <QuestionHistory
             history={questionHistory}
             onRerun={(text) => sendMessage(text, "chat")}
@@ -384,14 +384,14 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
               placeholder={messages.length === 0 ? "本日はどのようなお手伝いをしましょうか。" : "追加でご質問はございますか。"}
               disabled={isLoading}
               className="flex-1 bg-gray-800 text-white rounded-lg px-4 py-3 text-sm
-                         border border-gray-600 focus:border-blue-500 focus:outline-none
+                         border border-gray-600 focus:border-[#FF462D] focus:outline-none
                          disabled:opacity-50"
             />
             <button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="bg-blue-600 text-white rounded-lg px-6 py-3 text-sm font-bold
-                         hover:bg-blue-500 disabled:opacity-50 disabled:hover:bg-blue-600
+              className="bg-[#FF462D] text-white rounded-lg px-6 py-3 text-sm font-bold
+                         hover:bg-[#FF462D] disabled:opacity-50 disabled:hover:bg-[#FF462D]
                          transition-colors"
             >
               送信

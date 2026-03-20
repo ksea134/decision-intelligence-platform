@@ -46,14 +46,14 @@ export default function Sidebar({ selectedCompany, onSelectCompany, onGcpConfigC
           value={projectId}
           onChange={(e) => { setProjectId(e.target.value); onGcpConfigChange(e.target.value, gcsBucket); }}
           placeholder="GCP Project ID"
-          className="bg-gray-800 text-white text-xs rounded px-2 py-1.5 mb-1 border border-gray-600 focus:border-blue-500 focus:outline-none"
+          className="bg-gray-800 text-white text-xs rounded px-2 py-1.5 mb-1 border border-gray-600 focus:border-[#FF462D] focus:outline-none"
         />
         <input
           type="text"
           value={gcsBucket}
           onChange={(e) => { setGcsBucket(e.target.value); onGcpConfigChange(projectId, e.target.value); }}
           placeholder="GCS Bucket Name"
-          className="bg-gray-800 text-white text-xs rounded px-2 py-1.5 mb-4 border border-gray-600 focus:border-blue-500 focus:outline-none"
+          className="bg-gray-800 text-white text-xs rounded px-2 py-1.5 mb-4 border border-gray-600 focus:border-[#FF462D] focus:outline-none"
         />
 
         <div className="h-px bg-gray-700 mb-4" />
@@ -61,7 +61,7 @@ export default function Sidebar({ selectedCompany, onSelectCompany, onGcpConfigC
         {/* 企業選択 */}
         <label className="text-xs text-gray-400 mb-1">企業を選択</label>
         <select
-          className="bg-gray-800 text-white text-sm rounded px-3 py-2 mb-6 border border-gray-600 focus:border-blue-500 focus:outline-none"
+          className="bg-gray-800 text-white text-sm rounded px-3 py-2 mb-6 border border-gray-600 focus:border-[#FF462D] focus:outline-none"
           value={selectedCompany?.folder_name || ""}
           onChange={(e) => {
             const c = companies.find((c) => c.folder_name === e.target.value);

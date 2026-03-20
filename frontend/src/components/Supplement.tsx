@@ -42,7 +42,7 @@ export default function Supplement({
         <button
           onClick={handleLoadDeepDive}
           disabled={ddLoading}
-          className="text-xs text-blue-400 hover:text-blue-300 disabled:opacity-50"
+          className="text-xs text-[#4CDD84] hover:text-[#5FE896] disabled:opacity-50"
         >
           {ddLoading ? "生成中..." : "深掘り質問を表示"}
         </button>
@@ -55,7 +55,7 @@ export default function Supplement({
             <button
               key={i}
               onClick={() => onDeepDiveClick(q)}
-              className="block w-full text-left text-xs text-blue-300 hover:text-blue-200
+              className="block w-full text-left text-xs text-[#4CDD84] hover:text-[#5FE896]
                          bg-gray-800/50 rounded px-3 py-2 hover:bg-gray-700/50 transition-colors"
             >
               {q}

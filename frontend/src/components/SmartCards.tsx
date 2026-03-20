@@ -31,7 +31,7 @@ export default function SmartCards({ folderName, onCardClick, visible }: SmartCa
             className="group flex flex-col items-center justify-center text-center
                        bg-gradient-to-br from-gray-800 to-gray-900
                        border border-gray-700 rounded-xl p-3 h-36
-                       hover:border-blue-500 hover:from-gray-700 hover:to-gray-800
+                       hover:border-[#29707A] hover:from-gray-700 hover:to-gray-800
                        transition-all duration-200 cursor-pointer"
           >
             <span className="text-2xl mb-1">{card.icon}</span>

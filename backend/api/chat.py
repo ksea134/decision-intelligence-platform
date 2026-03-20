@@ -252,7 +252,10 @@ async def chat(request: ChatRequest) -> EventSourceResponse:
                     token = payload
                     if isinstance(token, str):
                         chunks.append(token)
-                        yield {"event": "text", "data": json.dumps({"text": token})}
+                        # tool_codeを含まないチャンクのみリアルタイム送信
+                        partial = "".join(chunks)
+                        if "tool_code" not in partial:
+                            yield {"event": "text", "data": json.dumps({"text": token})}
                     elif isinstance(token, dict):
                         if "status" in token:
                             yield {"event": "status", "data": json.dumps({"message": token["status"]})}
@@ -276,10 +279,12 @@ async def chat(request: ChatRequest) -> EventSourceResponse:
                     yield {"event": "error", "data": json.dumps({"message": payload})}
                     return
 
-            # --- 全文結合 + tool_codeフィルタ ---
+            # --- 全文結合 + tool_codeフィルタ（フェンス付き・なし両対応） ---
             full_text = "".join(chunks)
             if "tool_code" in full_text:
-                full_text = re.sub(r"```tool_code.*?```", "", full_text, flags=re.DOTALL).strip()
+                full_text = re.sub(r"```tool_code.*?```", "", full_text, flags=re.DOTALL)
+                full_text = re.sub(r"(?m)^tool_code\s*\n(?:print\(.*?\)\n?)*", "", full_text)
+                full_text = full_text.strip()
 
             if not full_text:
                 yield {"event": "error", "data": json.dumps({"message": "AIからの応答が空でした"})}

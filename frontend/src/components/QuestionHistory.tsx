@@ -31,7 +31,7 @@ export default function QuestionHistory({ history, onRerun, onDelete }: Question
                 onClick={() => onRerun(entry.text)}
                 className="flex-1 text-left text-xs text-gray-300 hover:text-white
                            bg-gray-800 hover:bg-gray-700 rounded px-2 py-1.5
-                           transition-colors truncate"
+                           transition-colors whitespace-pre-wrap break-words"
                 title={entry.ts}
               >
                 ↩ {entry.text}
