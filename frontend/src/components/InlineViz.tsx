@@ -73,16 +73,9 @@ function MermaidChart({ code }: { code: string }) {
     });
     if (ref.current) {
       const id = `mermaid-${Math.random().toString(36).slice(2)}`;
-      mermaid.render(id, code)
-        .then(({ svg }) => {
-          if (ref.current) ref.current.innerHTML = svg;
-        })
-        .catch((err) => {
-          console.error("Mermaid render error:", err);
-          if (ref.current) {
-            ref.current.innerHTML = `<pre style="color:#f87171;font-size:12px;padding:8px;">[フローチャート描画エラー]\n${code}</pre>`;
-          }
-        });
+      mermaid.render(id, code).then(({ svg }) => {
+        if (ref.current) ref.current.innerHTML = svg;
+      });
     }
   }, [code]);
 
