@@ -1,5 +1,4 @@
-"""GCP認証ヘルパー - Streamlit Cloud と ローカル環境の両方に対応"""
-import streamlit as st
+"""GCP認証ヘルパー - Streamlit Cloud / FastAPI / ローカル環境の全てに対応"""
 from google.oauth2 import service_account
 from google.auth import default
 import logging
@@ -10,11 +9,12 @@ logger = logging.getLogger(__name__)
 def get_credentials():
     """
     GCP認証情報を取得する。
-    1. Streamlit Secrets に gcp_service_account があればそれを使用
-    2. なければ ADC（Application Default Credentials）を使用
+    1. Streamlit Secrets に gcp_service_account があればそれを使用（Streamlit Cloud）
+    2. なければ ADC（Application Default Credentials）を使用（ローカル / Cloud Run）
     """
+    # Streamlit Cloud: Secrets からサービスアカウント情報を取得
     try:
-        # Streamlit Cloud: Secrets からサービスアカウント情報を取得
+        import streamlit as st
         if "gcp_service_account" in st.secrets:
             logger.info("Using Streamlit Secrets for GCP authentication")
             credentials = service_account.Credentials.from_service_account_info(
@@ -25,10 +25,10 @@ def get_credentials():
                 ],
             )
             return credentials
-    except Exception as e:
-        logger.warning(f"Failed to load credentials from Streamlit Secrets: {e}")
-    
-    # ローカル環境: ADC を使用
+    except (ImportError, Exception) as e:
+        logger.debug("Streamlit Secrets not available: %s", e)
+
+    # ローカル環境 / Cloud Run: ADC を使用
     try:
         logger.info("Using Application Default Credentials")
         credentials, project = default()

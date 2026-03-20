@@ -1,17 +1,21 @@
-"""BigQuery Service - Streamlit Cloud 対応版"""
+"""BigQuery Service - Streamlit / FastAPI 両対応版"""
 from __future__ import annotations
 import logging
 import re
+import time
 from dataclasses import dataclass
 from typing import Any
 
-import streamlit as st
 from google.cloud import bigquery
 
 from infra.gcp_auth import get_credentials
 from domain.models import CloudDataResult
 
 logger = logging.getLogger(__name__)
+
+# TTL付きキャッシュ（Streamlit非依存）
+_bq_schema_cache: dict[str, tuple[float, tuple]] = {}  # key → (timestamp, result)
+_BQ_CACHE_TTL = 300  # 5分
 
 
 SQL_DISALLOWED_KEYWORDS = [
@@ -147,11 +151,18 @@ def _get_service(project_id: str) -> BigQueryService:
     return _default_service
 
 
-@st.cache_data(ttl=300, show_spinner=False)
 def fetch_bq_schema(project_id: str, dataset_filter: str | None = None) -> tuple[dict, CloudDataResult]:
-    """BQスキーマを取得"""
+    """BQスキーマを取得（TTLキャッシュ付き）"""
+    cache_key = f"{project_id}:{dataset_filter}"
+    now = time.time()
+    if cache_key in _bq_schema_cache:
+        cached_ts, cached_result = _bq_schema_cache[cache_key]
+        if now - cached_ts < _BQ_CACHE_TTL:
+            return cached_result
     service = _get_service(project_id)
-    return service.fetch_schema(project_id, dataset_filter)
+    result = service.fetch_schema(project_id, dataset_filter)
+    _bq_schema_cache[cache_key] = (now, result)
+    return result
 
 
 def execute_bq_sql(project_id: str, sql: str, max_rows: int = 100) -> SQLResult:

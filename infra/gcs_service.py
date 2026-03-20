@@ -1,14 +1,18 @@
-"""GCS Service - Streamlit Cloud 対応版"""
+"""GCS Service - Streamlit / FastAPI 両対応版"""
 from __future__ import annotations
 import logging
+import time
 
-import streamlit as st
 from google.cloud import storage
 
 from infra.gcp_auth import get_credentials
 from domain.models import CloudDataResult
 
 logger = logging.getLogger(__name__)
+
+# TTL付きキャッシュ（Streamlit非依存）
+_gcs_doc_cache: dict[str, tuple[float, CloudDataResult]] = {}
+_GCS_CACHE_TTL = 300  # 5分
 
 
 class GCSService:
@@ -22,11 +26,22 @@ class GCSService:
             self._client = storage.Client(credentials=credentials)
         return self._client
 
-    @st.cache_data(ttl=300, show_spinner=False)
-    def fetch_documents(_self, bucket_name: str, prefix: str = "", max_size_mb: int = 5) -> CloudDataResult:
-        """GCSからドキュメントを取得（キャッシュ付き）"""
+    def fetch_documents(self, bucket_name: str, prefix: str = "", max_size_mb: int = 5) -> CloudDataResult:
+        """GCSからドキュメントを取得（TTLキャッシュ付き）"""
+        cache_key = f"{bucket_name}:{prefix}"
+        now = time.time()
+        if cache_key in _gcs_doc_cache:
+            cached_ts, cached_result = _gcs_doc_cache[cache_key]
+            if now - cached_ts < _GCS_CACHE_TTL:
+                return cached_result
+        result = self._fetch_documents_impl(bucket_name, prefix, max_size_mb)
+        _gcs_doc_cache[cache_key] = (now, result)
+        return result
+
+    def _fetch_documents_impl(self, bucket_name: str, prefix: str = "", max_size_mb: int = 5) -> CloudDataResult:
+        """GCSからドキュメントを取得（実処理）"""
         try:
-            client = _self._get_client()
+            client = self._get_client()
             bucket = client.bucket(bucket_name)
             blobs = list(bucket.list_blobs(prefix=prefix))
             

@@ -1,0 +1,42 @@
+"""
+backend/main.py — FastAPIエントリポイント
+
+Phase 5: Streamlit → FastAPI移行のバックエンド。
+既存のOrchestration層・Domain層・Infra層をそのまま活用し、
+REST API + SSEストリーミングでフロントエンドに提供する。
+"""
+from __future__ import annotations
+
+import os
+import sys
+
+# プロジェクトルートをパスに追加（既存コードのimportを維持）
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from backend.api.health import router as health_router
+from backend.api.companies import router as companies_router
+from backend.api.smart_cards import router as smart_cards_router
+from backend.api.chat import router as chat_router
+
+app = FastAPI(
+    title="DIP API",
+    description="Decision Intelligence Platform — Backend API",
+    version="5.0.0",
+)
+
+# CORS設定（開発時はlocalhostを許可、本番はIAPが認証するため不要）
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Next.js開発サーバー
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(health_router)
+app.include_router(companies_router)
+app.include_router(smart_cards_router)
+app.include_router(chat_router)
