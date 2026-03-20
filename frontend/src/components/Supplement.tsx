@@ -24,6 +24,7 @@ export default function Supplement({
 }: SupplementProps) {
   const [deepDive, setDeepDive] = useState<string[]>([]);
   const [ddLoading, setDdLoading] = useState(false);
+  const [ddOpen, setDdOpen] = useState(true);
 
   const handleLoadDeepDive = async () => {
     setDdLoading(true);
@@ -42,21 +43,28 @@ export default function Supplement({
         <button
           onClick={handleLoadDeepDive}
           disabled={ddLoading}
-          className="text-xs text-[#4CDD84] hover:text-[#5FE896] disabled:opacity-50"
+          className="text-xs text-gray-400 hover:text-gray-300 disabled:opacity-50 flex items-center gap-1"
         >
-          {ddLoading ? "生成中..." : "深掘り質問を表示"}
+          <span>▶</span>
+          <span>{ddLoading ? "生成中..." : "深掘り質問AI生成"}</span>
         </button>
       )}
 
       {deepDive.length > 0 && (
         <div className="space-y-1">
-          <span className="text-xs text-gray-400">深掘り質問</span>
-          {deepDive.map((q, i) => (
+          <button
+            onClick={() => setDdOpen(!ddOpen)}
+            className="text-xs text-gray-400 hover:text-gray-300 flex items-center gap-1"
+          >
+            <span>{ddOpen ? "▼" : "▶"}</span>
+            <span>深掘り質問AI生成（{deepDive.length}件）</span>
+          </button>
+          {ddOpen && deepDive.map((q, i) => (
             <button
               key={i}
               onClick={() => onDeepDiveClick(q)}
               className="block w-full text-left text-xs text-[#4CDD84] hover:text-[#5FE896]
-                         bg-gray-800/50 rounded px-3 py-2 hover:bg-gray-700/50 transition-colors"
+                         bg-gray-800 hover:bg-gray-700 rounded px-2 py-1.5 transition-colors"
             >
               {q}
             </button>
