@@ -304,13 +304,7 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
                       answer={msg.content}
                       companyName={company.display_name}
                     />
-                    <Supplement
-                      userPrompt={msg.userPrompt || ""}
-                      displayText={msg.content}
-                      companyDisplayName={company.display_name}
-                      companyFolderName={company.folder_name}
-                      onDeepDiveClick={(q) => sendMessage(q, "chat")}
-                    />
+                    {/* 深掘り質問は入力欄の上に表示 */}
                   </>
                 ) : (
                   <p>{msg.content}</p>
@@ -326,7 +320,7 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
                   <>
                     <div className="chat-md">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {streamingText.replace(/```tool_code[\s\S]*?```/g, "").replace(/^tool_code\s*\n(?:print\(.*?\)\n?)*/gm, "").trim()}
+                        {streamingText.replace(/```tool_code[\s\S]*?```/g, "").replace(/^tool_code\s*\n(?:print\(.*?\)\n?)*/gm, "").replace(/<viz[\s\S]*?<\/viz>/g, "").trim()}
                       </ReactMarkdown>
                     </div>
                     
@@ -353,7 +347,20 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
         </div>
 
         {/* 入力欄 */}
-        <div className="sticky bottom-0 z-10 border-t border-gray-700 p-4 bg-[#0A0E14]">
+        <div className="sticky bottom-0 z-10 p-4 bg-[#0A0E14]">
+          {/* 深掘り質問 + 質問履歴 */}
+          {(() => {
+            const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
+            return lastAssistant ? (
+              <Supplement
+                userPrompt={lastAssistant.userPrompt || ""}
+                displayText={lastAssistant.content}
+                companyDisplayName={company.display_name}
+                companyFolderName={company.folder_name}
+                onDeepDiveClick={(q) => sendMessage(q, "chat")}
+              />
+            ) : null;
+          })()}
           <QuestionHistory
             history={questionHistory}
             onRerun={(text) => sendMessage(text, "chat")}
@@ -363,7 +370,6 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
               });
             }}
           />
-          <span className="text-xs text-gray-400 tracking-wider">DI Conversation</span>
           <form onSubmit={handleSubmit} className="flex gap-2 mt-1">
             <input
               type="text"

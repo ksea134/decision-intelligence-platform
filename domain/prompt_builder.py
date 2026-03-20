@@ -150,7 +150,12 @@ def _build_viz_tag_instruction() -> str:
         "■ 使えるチャートタイプ:\n"
         '- type="bar" : 棒グラフ（比較に最適）\n'
         '- type="line" : 折れ線グラフ（推移・トレンドに最適）\n'
-        '- type="pie" : 円グラフ（構成比に最適）\n\n'
+        '- type="pie" : 円グラフ（構成比に最適）\n'
+        '- type="flowchart" : フローチャート・構造図・関係図（Mermaid記法で記述）\n\n'
+        "■ flowchartの記載例:\n"
+        '<viz type="flowchart" title="タイトル">\n'
+        '{"labels": ["graph TD", "  A[開始] --> B[処理]", "  B --> C[終了]"], "data": []}\n'
+        "</viz>\n\n"
         "■ ルール:\n"
         "- チャートは回答の流れの中に自然に配置すること（末尾にまとめない）\n"
         "- labelsとdataの要素数は必ず一致させること\n"

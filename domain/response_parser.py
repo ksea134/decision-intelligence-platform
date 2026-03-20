@@ -130,6 +130,8 @@ def _clean_display_text(text: str) -> str:
     # tool_codeブロック除去（フェンス付き・なし両対応）
     result = re.sub(r"```tool_code.*?```", "", result, flags=re.DOTALL).strip()
     result = re.sub(r"(?m)^tool_code\s*\n(?:print\(.*?\)\n?)*", "", result).strip()
+    # <viz>タグ除去（segmentsで別途描画されるため本文には不要）
+    result = re.sub(r"<viz[\s\S]*?</viz>", "", result).strip()
     result = _RE_SQL_BLOCK.sub("", result).strip()
     result = _RE_SQL_PLAIN.sub("", result).strip()
     result = _RE_BQ_QUERY_REF.sub("", result).strip()

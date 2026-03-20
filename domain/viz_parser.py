@@ -18,7 +18,7 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 _RE_VIZ_TAG = re.compile(
-    r'<viz\s+type="(bar|line|pie)"\s+title="([^"]*)">\s*'
+    r'<viz\s+type="(bar|line|pie|flowchart)"\s+title="([^"]*)">\s*'
     r'(\{.*?\})\s*'
     r'</viz>',
     re.DOTALL,

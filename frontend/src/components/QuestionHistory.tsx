@@ -29,7 +29,7 @@ export default function QuestionHistory({ history, onRerun, onDelete }: Question
             <div key={entry.id} className="flex items-center gap-1">
               <button
                 onClick={() => onRerun(entry.text)}
-                className="flex-1 text-left text-xs text-gray-300 hover:text-white
+                className="flex-1 text-left text-xs text-[#4CDD84] hover:text-[#5FE896]
                            bg-gray-800 hover:bg-gray-700 rounded px-2 py-1.5
                            transition-colors whitespace-pre-wrap break-words"
                 title={entry.ts}
