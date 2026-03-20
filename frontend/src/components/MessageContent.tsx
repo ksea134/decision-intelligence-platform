@@ -46,12 +46,11 @@ export default function MessageContent({ segments, fallbackText }: MessageConten
           );
         }
         if (seg.type === "viz" && seg.chart_type && seg.labels && seg.data) {
-          return (
-            <InlineViz
-              key={i}
-              segment={seg as VizSegment}
-            />
-          );
+          try {
+            return <InlineViz key={i} segment={seg as VizSegment} />;
+          } catch (e) {
+            return <pre key={i} style={{color:"#f87171",fontSize:"12px"}}>[描画エラー]</pre>;
+          }
         }
         return null;
       })}
