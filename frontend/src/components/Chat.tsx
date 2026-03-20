@@ -95,6 +95,7 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
 
     let accumulatedText = "";
     let lastFlowSteps: any[] = [];
+    let lastFiles: FilesData | null = null;
 
     abortRef.current = streamChat(
       {
@@ -116,6 +117,7 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
           setStatus(message);
         },
         onFiles: (files) => {
+          lastFiles = files;
           setStreamingFiles(files);
         },
         onFlowSteps: (steps) => {
@@ -128,7 +130,7 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
             {
               role: "assistant",
               content: displayText || accumulatedText,
-              files: streamingFiles,
+              files: lastFiles,
               segments: segments || null,
               userPrompt: question,
               flowSteps: lastFlowSteps,
@@ -215,8 +217,8 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
 
   return (
     <div className="flex h-screen">
-      {/* 左カラム: チャット（75%） */}
-      <div className="flex-[3] flex flex-col min-w-0">
+      {/* 左カラム: チャット（残り全幅） */}
+      <div className="flex-1 flex flex-col min-w-0">
         {/* タイトル行 */}
         <div className="flex items-center justify-between pl-14 pr-6 py-3 border-b border-gray-800">
           <div>
@@ -398,8 +400,8 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
         </div>
       </div>
 
-      {/* 右カラム: 情報パネル（25%） */}
-      <div className="flex-[1] border-l border-gray-700 bg-gray-900 min-w-0">
+      {/* 右カラム: 情報パネル（左サイドバーと同じ幅） */}
+      <div className="w-72 flex-shrink-0 border-l border-gray-700 bg-gray-900">
         <RightColumn
           folderName={company.folder_name}
           projectId={projectId}

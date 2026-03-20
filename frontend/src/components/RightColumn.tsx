@@ -128,7 +128,8 @@ export default function RightColumn({ folderName, projectId, gcsBucket, flowStep
                 .split("\n")
                 .map((line) => {
                   const trimmed = line.trim();
-                  if (!trimmed || trimmed.startsWith("-") || trimmed.startsWith("*") || trimmed.startsWith("#")) return line;
+                  if (!trimmed || trimmed.startsWith("-") || trimmed.startsWith("#")) return line;
+                  if (trimmed.startsWith("**")) return line;  // 見出し行（**Step 1:等）はそのまま
                   return `- ${line}`;
                 })
                 .join("\n")}

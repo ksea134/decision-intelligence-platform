@@ -356,17 +356,18 @@ class ReasoningEngine:
     ) -> str:
         """Generate 4-step thought process from Q&A pair."""
         prompt = (
-            "You are a system that analyzes AI reasoning.\n"
-            "Given the question, answer, and data below, reconstruct the 4-step thinking process.\n\n"
-            "Question: " + user_question + "\n\n"
-            "Answer: " + assistant_answer + "\n\n"
-            "Structured data (excerpt): " + (structured_data[:APP.prompt_data_limit] if structured_data else "none") + "\n\n"
-            "Unstructured data (excerpt): " + (unstructured_data[:APP.prompt_data_limit] if unstructured_data else "none") + "\n\n"
-            "Output ONLY the following format in Japanese. No other text.\n\n"
-            "**Step 1: データの定量的把握**\n- (bullet points)\n\n"
-            "**Step 2: リスク・文脈の把握**\n- (bullet points)\n\n"
-            "**Step 3: 論点・仮説の統合**\n- (bullet points)\n\n"
-            "**Step 4: 回答方針**\n- (bullet points)"
+            "あなたはAIの推論過程を分析するシステムです。\n"
+            "以下の質問・回答・データから、4ステップの思考プロセスを再構成してください。\n\n"
+            "【質問】" + user_question + "\n\n"
+            "【回答】" + assistant_answer + "\n\n"
+            "【構造化データ（抜粋）】" + (structured_data[:APP.prompt_data_limit] if structured_data else "なし") + "\n\n"
+            "【非構造化データ（抜粋）】" + (unstructured_data[:APP.prompt_data_limit] if unstructured_data else "なし") + "\n\n"
+            "以下のフォーマットのみ出力すること。他のテキストは一切不要。\n"
+            "各項目は体言止めで簡潔に記載し、ブレット（-）形式で列挙すること。\n\n"
+            "**Step 1: データの定量的把握**\n- （体言止めで事実を列挙）\n\n"
+            "**Step 2: リスク・文脈の把握**\n- （体言止めでリスク・背景を列挙）\n\n"
+            "**Step 3: 論点・仮説の統合**\n- （体言止めで論点・仮説を列挙）\n\n"
+            "**Step 4: 回答方針**\n- （体言止めで方針を列挙）"
         )
         try:
             return self._generate_text(prompt)
