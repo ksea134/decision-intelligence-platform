@@ -138,9 +138,10 @@ def _clean_display_text(text: str) -> str:
     # result = _RE_CITATION_LINE.sub("", result).strip()
     # 括弧内のSELECT文も除去
     result = re.sub(r"[（(]\s*SELECT\b[^)）]*[;；]\s*[)）]", "", result).strip()
-    # <viz type="mermaid">...</viz> の外枠だけ除去し、中身のテキストは残す（step_to_mermaidがステップ検出に使う）
-    # 開始タグと対応する閉じタグをペアで除去（bar/line/pieの</viz>は残す）
-    result = re.sub(r'<viz\s+type="mermaid"[^>]*>(.*?)</viz>', r'\1', result, flags=re.DOTALL).strip()
-    # ```mermaid コードブロックの外枠だけ除去
-    result = re.sub(r"```mermaid\s*\n?(.*?)```", r'\1', result, flags=re.DOTALL).strip()
+    # <viz type="mermaid">...</viz> を中身ごと除去（step_to_mermaidは番号付きリストから検出するため不要）
+    result = re.sub(r'<viz\s+type="mermaid"[^>]*>.*?</viz>', '', result, flags=re.DOTALL).strip()
+    # ```mermaid コードブロックを中身ごと除去
+    result = re.sub(r"```mermaid\s*\n?.*?```", '', result, flags=re.DOTALL).strip()
+    # 裸のMermaidコード（graph TD/LR で始まるブロック）も除去
+    result = re.sub(r"(?m)^graph (?:TD|LR)\n(?:.*\n)*?(?=\n\S|\Z)", '', result).strip()
     return result

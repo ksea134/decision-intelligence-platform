@@ -1,25 +1,10 @@
 "use client";
 
-import { Bar, Line, Pie } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  LineElement,
-  PointElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-} from "chart.js";
+import dynamic from "next/dynamic";
 import MermaidChart from "./MermaidChart";
 
-// Chart.js のコンポーネント登録
-ChartJS.register(
-  CategoryScale, LinearScale, BarElement, LineElement, PointElement,
-  ArcElement, Title, Tooltip, Legend,
-);
+// ECharts を SSR 回避で動的インポート
+const ReactECharts = dynamic(() => import("echarts-for-react"), { ssr: false });
 
 export interface VizSegment {
   type: "viz";
@@ -35,17 +20,15 @@ interface InlineVizProps {
 }
 
 const COLORS = [
-  "rgba(59, 130, 246, 0.8)",   // blue
-  "rgba(34, 197, 94, 0.8)",    // green
-  "rgba(245, 158, 11, 0.8)",   // amber
-  "rgba(239, 68, 68, 0.8)",    // red
-  "rgba(168, 85, 247, 0.8)",   // purple
-  "rgba(6, 182, 212, 0.8)",    // cyan
-  "rgba(249, 115, 22, 0.8)",   // orange
-  "rgba(236, 72, 153, 0.8)",   // pink
+  "#3b82f6", // blue
+  "#22c55e", // green
+  "#f59e0b", // amber
+  "#ef4444", // red
+  "#a855f7", // purple
+  "#06b6d4", // cyan
+  "#f97316", // orange
+  "#ec4899", // pink
 ];
-
-const BORDER_COLORS = COLORS.map((c) => c.replace("0.8", "1"));
 
 export default function InlineViz({ segment }: InlineVizProps) {
   const { chart_type, title } = segment;
@@ -55,48 +38,147 @@ export default function InlineViz({ segment }: InlineVizProps) {
     return <MermaidChart code={segment.code} title={title} />;
   }
 
-  // Chart.js描画（bar/line/pie）
+  // ECharts描画（bar/line/pie）
   const labels = segment.labels || [];
   const data = segment.data || [];
 
-  const chartData = {
-    labels,
-    datasets: [
+  const option = chart_type === "pie"
+    ? _buildPieOption(title, labels, data)
+    : _buildCartesianOption(chart_type as "bar" | "line", title, labels, data);
+
+  return (
+    <div className="my-4 max-w-2xl mx-auto">
+      <ReactECharts
+        option={option}
+        style={{ height: "400px", width: "100%" }}
+        opts={{ renderer: "canvas" }}
+        theme="dark"
+      />
+    </div>
+  );
+}
+
+function _buildCartesianOption(
+  chartType: "bar" | "line",
+  title: string,
+  labels: string[],
+  data: number[],
+) {
+  return {
+    backgroundColor: "transparent",
+    title: {
+      text: title,
+      left: "center",
+      textStyle: { color: "rgba(255,255,255,0.9)", fontSize: 14 },
+    },
+    tooltip: {
+      trigger: "axis",
+      backgroundColor: "rgba(30,30,30,0.95)",
+      borderColor: "#4CDD84",
+      textStyle: { color: "#fff" },
+    },
+    xAxis: {
+      type: "category",
+      data: labels,
+      axisLabel: { color: "rgba(255,255,255,0.6)", fontSize: 11, rotate: labels.length > 6 ? 30 : 0 },
+      axisLine: { lineStyle: { color: "rgba(255,255,255,0.15)" } },
+    },
+    yAxis: {
+      type: "value",
+      axisLabel: { color: "rgba(255,255,255,0.6)", fontSize: 11 },
+      splitLine: { lineStyle: { color: "rgba(255,255,255,0.08)" } },
+    },
+    series: [
       {
-        label: title,
+        type: chartType,
         data,
-        backgroundColor: chart_type === "pie" ? COLORS.slice(0, data.length) : COLORS[0],
-        borderColor: chart_type === "pie" ? BORDER_COLORS.slice(0, data.length) : BORDER_COLORS[0],
-        borderWidth: 1,
+        itemStyle: {
+          color: chartType === "bar"
+            ? {
+                type: "linear",
+                x: 0, y: 0, x2: 0, y2: 1,
+                colorStops: [
+                  { offset: 0, color: COLORS[0] },
+                  { offset: 1, color: "rgba(59,130,246,0.3)" },
+                ],
+              }
+            : COLORS[0],
+          borderRadius: chartType === "bar" ? [4, 4, 0, 0] : undefined,
+        },
+        lineStyle: chartType === "line" ? { width: 3, color: COLORS[0] } : undefined,
+        areaStyle: chartType === "line"
+          ? {
+              color: {
+                type: "linear",
+                x: 0, y: 0, x2: 0, y2: 1,
+                colorStops: [
+                  { offset: 0, color: "rgba(59,130,246,0.4)" },
+                  { offset: 1, color: "rgba(59,130,246,0.05)" },
+                ],
+              },
+            }
+          : undefined,
+        smooth: chartType === "line",
+        symbol: chartType === "line" ? "circle" : undefined,
+        symbolSize: chartType === "line" ? 6 : undefined,
+        animationDuration: 800,
+        animationEasing: "cubicOut",
+      },
+    ],
+    grid: { left: "10%", right: "5%", bottom: "15%", top: "15%" },
+  };
+}
+
+function _buildPieOption(title: string, labels: string[], data: number[]) {
+  const pieData = labels.map((name, i) => ({
+    name,
+    value: data[i],
+    itemStyle: { color: COLORS[i % COLORS.length] },
+  }));
+
+  return {
+    backgroundColor: "transparent",
+    title: {
+      text: title,
+      left: "center",
+      textStyle: { color: "rgba(255,255,255,0.9)", fontSize: 14 },
+    },
+    tooltip: {
+      trigger: "item",
+      backgroundColor: "rgba(30,30,30,0.95)",
+      borderColor: "#4CDD84",
+      textStyle: { color: "#fff" },
+      formatter: "{b}: {c} ({d}%)",
+    },
+    legend: {
+      bottom: "5%",
+      textStyle: { color: "rgba(255,255,255,0.7)", fontSize: 11 },
+    },
+    series: [
+      {
+        type: "pie",
+        radius: ["35%", "65%"],
+        center: ["50%", "45%"],
+        data: pieData,
+        label: {
+          color: "rgba(255,255,255,0.8)",
+          fontSize: 11,
+          formatter: "{b}\n{d}%",
+        },
+        labelLine: { lineStyle: { color: "rgba(255,255,255,0.3)" } },
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: "rgba(0,0,0,0.5)",
+          },
+          scale: true,
+          scaleSize: 8,
+        },
+        animationType: "scale",
+        animationDuration: 800,
+        animationEasing: "cubicOut",
       },
     ],
   };
-
-  const options = {
-    responsive: true,
-    plugins: {
-      legend: {
-        display: chart_type === "pie",
-        labels: { color: "rgba(255,255,255,0.7)" },
-      },
-      title: {
-        display: true,
-        text: title,
-        color: "rgba(255,255,255,0.9)",
-        font: { size: 14 },
-      },
-    },
-    scales: chart_type !== "pie" ? {
-      x: { ticks: { color: "rgba(255,255,255,0.6)" }, grid: { color: "rgba(255,255,255,0.1)" } },
-      y: { ticks: { color: "rgba(255,255,255,0.6)" }, grid: { color: "rgba(255,255,255,0.1)" } },
-    } : undefined,
-  };
-
-  return (
-    <div className="my-4 p-4 bg-gray-800/50 rounded-lg border border-gray-700 max-w-xl">
-      {chart_type === "bar" && <Bar data={chartData} options={options} />}
-      {chart_type === "line" && <Line data={chartData} options={options} />}
-      {chart_type === "pie" && <Pie data={chartData} options={options} />}
-    </div>
-  );
 }

@@ -304,7 +304,7 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
                           <iframe
                             id={`infographic-${i}`}
                             srcDoc={msg.infographicHtml}
-                            className="w-full rounded border border-gray-700"
+                            className="w-full rounded"
                             style={{ height: `${dynamicH}px` }}
                           />
                         </div>

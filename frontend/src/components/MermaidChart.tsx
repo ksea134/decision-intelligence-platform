@@ -69,13 +69,13 @@ export default function MermaidChart({ code, title }: MermaidChartProps) {
   }, [code]);
 
   return (
-    <div className="my-4 p-4 bg-gray-800/50 rounded-lg border border-gray-700 max-w-2xl overflow-x-auto">
+    <div className="my-4 max-w-2xl mx-auto overflow-x-auto">
       {title && (
         <div className="text-sm font-bold text-white mb-2">{title}</div>
       )}
 
       {/* Mermaid SVG描画エリア */}
-      <div ref={containerRef} className={error ? "hidden" : ""} />
+      <div ref={containerRef} className={error ? "hidden" : "flex justify-center"} />
 
       {/* エラー時フォールバック: コードブロック表示 */}
       {error && (

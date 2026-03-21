@@ -559,7 +559,7 @@ class ReasoningEngine:
 <html lang="ja"><head><meta charset="utf-8">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0}}
-html,body{{width:100%;min-height:100%;background:#0e1117;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#fff}}
+html,body{{width:100%;min-height:100%;background:#0A0E14;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#fff}}
 .root{{
   display:grid;
   grid-template-columns:1fr;
@@ -567,7 +567,7 @@ html,body{{width:100%;min-height:100%;background:#0e1117;font-family:-apple-syst
   gap:12px;
   padding:18px;
   min-height:100%;
-  background:#0e1117;
+  background:#0A0E14;
 }}
 @media(min-width:768px){{
   .root{{grid-template-columns:1.2fr 1fr 1fr;grid-template-rows:auto auto;}}
