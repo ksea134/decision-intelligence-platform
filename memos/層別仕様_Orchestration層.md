@@ -39,24 +39,56 @@
   質問・回答・企業名・エージェント分類を自動保存
 ```
 
-## 3. エンジン構成
+## 3. ハイブリッドエンジン構成（v5.6.0現在）
 
-| エンジン | フラグ | 説明 |
-|---------|-------|------|
-| ADKエンジン | `USE_ADK_ENGINE=True` | Google ADK（Agent Development Kit）ベース。現在のデフォルト |
-| V1エンジン + Router | `USE_AGENT_ROUTER=True` | 従来のReasoningEngine + RouterAgent |
-| V1エンジン | 両方False | 最もシンプル。Router分類なし |
+### V1エンジンとADKエンジンの使い分け
 
-ADKが未インストールの環境（Streamlit Cloud等）では自動的にV1エンジンにフォールバック。
+| 入力方法 | 使用エンジン | 特徴 | Claudeモデル |
+|---------|------------|------|-------------|
+| **スマートカードクリック** | V1エンジン | 高速（Gemini API 1回）。プロンプト・データソース確定済み | ✅ 利用可能 |
+| **チャット入力** | ADKエンジン | サブエージェント振り分け（質問の種類に応じた専門回答） | ⬜ 未対応（Vertex AI Model Garden有効化で対応予定） |
 
-## 4. エージェント構成
+### V1エンジン（`orchestration/reasoning_engine.py`）
+
+- 2フェーズ固定構造: データ取得（非ストリーミング）→ 回答生成（ストリーミング）
+- LLMクライアント抽象化層（`orchestration/llm_client.py`）経由でGemini/Claude自動切替
+- モデル設定: `config/app_config.py` の `MODELS.fast`
+- 安定性: 高（Gemini API呼び出し回数が固定、予測可能）
+
+### ADKエンジン（`orchestration/adk/runner.py`）
+
+- Google ADK（Agent Development Kit）ベース
+- ルートエージェント → サブエージェント自動振り分け
+- モデル設定: `MODELS.router`（ルーター）、`MODELS.deep`（分析系）、`MODELS.fast`（汎用）
+- ADKはGemini専用。Claude利用にはVertex AI Model Garden経由が必要（後日対応）
+
+### 補足フェーズ（`orchestration/reasoning_engine_v2.py`）
+
+- 思考ロジック・インフォグラフィック・深掘り質問を生成
+- LLMクライアント抽象化層経由でGemini/Claude自動切替
+- モデル設定: `MODELS.supplement`
+
+### モデル設定の一元管理
+
+全エンジンのモデル設定は `config/app_config.py` の `MODELS` で一元管理:
+
+| ロール | 用途 | デフォルト | 変更方法 |
+|--------|------|-----------|---------|
+| `router` | ADKルーター（質問分類） | gemini-2.5-flash | サイドバー or API |
+| `fast` | V1エンジン（スマートカード）、ADK汎用 | gemini-2.5-flash | サイドバー or API |
+| `deep` | ADK分析系エージェント | gemini-2.5-pro | サイドバー or API |
+| `supplement` | 補足フェーズ | gemini-2.5-flash | サイドバー or API |
+
+サイドバーの開発者情報からリアルタイムで切り替え可能（再起動不要）。
+
+## 4. エージェント構成（ADKエンジン）
 
 | エージェント | 分類トリガー | 専門フレームワーク | モデル |
 |------------|------------|------------------|--------|
-| 要因分析 | 「なぜ」「原因」「理由」「要因」 | 5 Whys + 寄与度分析 | Gemini 2.5 Pro |
-| 比較 | 「比較」「違い」「vs」「どちらが」 | 比較表 + 強み弱み構造 | Gemini 2.5 Pro |
-| 予測 | 「予測」「今後」「見通し」「どうなる」 | 3シナリオ（楽観/基本/悲観） | Gemini 2.5 Pro |
-| 汎用 | 上記以外 | 標準プロンプト | Gemini 2.5 Flash |
+| 要因分析 | 「なぜ」「原因」「理由」「要因」 | 5 Whys + 寄与度分析 | MODELS.deep |
+| 比較 | 「比較」「違い」「vs」「どちらが」 | 比較表 + 強み弱み構造 | MODELS.deep |
+| 予測 | 「予測」「今後」「見通し」「どうなる」 | 3シナリオ（楽観/基本/悲観） | MODELS.deep |
+| 汎用 | 上記以外 | 標準プロンプト | MODELS.fast |
 
 ### 導入メリット
 
