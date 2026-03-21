@@ -81,6 +81,18 @@
 
 サイドバーの開発者情報からリアルタイムで切り替え可能（再起動不要）。
 
+### 利用可能モデル一覧（v5.6.0現在）
+
+| モデルID | 表示名 | プロバイダ | 速度 | コスト | ADK対応 |
+|---------|--------|-----------|------|--------|---------|
+| gemini-2.5-flash | Gemini 2.5 Flash | Google | 高速 | 低 | ✅ |
+| gemini-2.5-pro | Gemini 2.5 Pro | Google | 標準 | 中 | ✅ |
+| claude-opus-4-6 | Claude Opus 4.6 | Anthropic | 低速 | 高 | ⬜ 後日対応 |
+| claude-sonnet-4-6 | Claude Sonnet 4.6 | Anthropic | 標準 | 中 | ⬜ 後日対応 |
+| claude-haiku-4-5 | Claude Haiku 4.5 | Anthropic | 高速 | 低 | ⬜ 後日対応 |
+
+ClaudeモデルはV1エンジン+補足フェーズで利用可能。ADK対応にはVertex AI Model GardenでのClaude有効化（法人申請）が必要。定義場所: `config/app_config.py` の `ModelConfig.AVAILABLE_MODELS`
+
 ## 4. エージェント構成（ADKエンジン）
 
 | エージェント | 分類トリガー | 専門フレームワーク | モデル |
