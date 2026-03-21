@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <!-- DIPファビコン / スタイル: Kyndryl Red / 用途: ブラウザタブ favicon -->
+  <!-- 16x16〜32x32 対応: "D" 1文字で視認性確保 -->
+  <rect width="32" height="32" rx="5" fill="#E2231A"/>
+  <text
+    x="16" y="17"
+    text-anchor="middle"
+    dominant-baseline="central"
+    font-family="Helvetica Neue, Arial, sans-serif"
+    font-size="22"
+    font-weight="800"
+    fill="#FFFFFF"
+  >D</text>
+</svg>
