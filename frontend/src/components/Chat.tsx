@@ -382,15 +382,18 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
             }}
           />
           <form onSubmit={handleSubmit} className="flex gap-2 mt-1">
-            <input
-              type="text"
+            <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(e); } }}
               placeholder={messages.length === 0 ? "本日はどのようなお手伝いをしましょうか。" : "追加でご質問はございますか。"}
               disabled={isLoading}
+              rows={1}
               className="flex-1 bg-gray-800 text-white rounded-lg px-4 py-3 text-sm
                          border border-gray-600 focus:border-[#FF462D] focus:outline-none
-                         disabled:opacity-50"
+                         disabled:opacity-50 resize-none overflow-hidden"
+              style={{ minHeight: "44px", maxHeight: "120px" }}
+              ref={(el) => { if (el) { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 120) + "px"; } }}
             />
             <button
               type="submit"

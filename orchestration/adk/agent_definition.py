@@ -208,7 +208,11 @@ def build_root_agent(
     )
 
     # ベースinstructionにリセットしてから企業コンテキストを追加（累積防止）
+    # モデル設定も毎回最新のMODELSから反映（実行中のモデル切り替えに対応）
     for agent in [analysis_agent, comparison_agent, forecast_agent, general_agent]:
         agent.instruction = _BASE_INSTRUCTIONS[agent.name] + company_context
+        agent.model = MODELS.deep
+    general_agent.model = MODELS.fast
+    root_agent.model = MODELS.router
 
     return root_agent

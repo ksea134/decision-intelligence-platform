@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Company, UserInfo, fetchCompanies, fetchMe, API_BASE, IS_LOCAL } from "@/lib/api";
+import { Company, UserInfo, ModelsResponse, fetchCompanies, fetchMe, fetchModels, switchModel, API_BASE, IS_LOCAL } from "@/lib/api";
 
 interface SidebarProps {
   selectedCompany: Company | null;
@@ -17,11 +17,26 @@ export default function Sidebar({ selectedCompany, onSelectCompany, onGcpConfigC
   const [gcsBucket, setGcsBucket] = useState("dsa-knowledge-base");
   const [user, setUser] = useState<UserInfo | null>(null);
   const [devOpen, setDevOpen] = useState(false);
+  const [models, setModels] = useState<ModelsResponse | null>(null);
 
   useEffect(() => {
     fetchCompanies().then(setCompanies);
     fetchMe().then(setUser);
+    fetchModels().then(setModels);
   }, []);
+
+  const handleModelSwitch = async (role: string, modelId: string) => {
+    await switchModel(role, modelId);
+    const updated = await fetchModels();
+    setModels(updated);
+  };
+
+  const ROLE_LABELS: Record<string, string> = {
+    router: "ルーター",
+    fast: "高速回答",
+    deep: "深い分析",
+    supplement: "補足フェーズ",
+  };
 
   return (
     <>
@@ -136,6 +151,28 @@ export default function Sidebar({ selectedCompany, onSelectCompany, onGcpConfigC
                     </div>
                   </div>
                 )}
+                {/* モデル設定 */}
+                {models && (
+                  <div className="mt-2">
+                    <div className="text-xs text-gray-500 mb-1">モデル設定</div>
+                    <div className="space-y-1.5">
+                      {Object.entries(models.current).map(([role, modelId]) => (
+                        <div key={role}>
+                          <div className="text-[10px] text-gray-500">{ROLE_LABELS[role] || role}</div>
+                          <select
+                            value={modelId}
+                            onChange={(e) => handleModelSwitch(role, e.target.value)}
+                            className="bg-gray-800 text-white text-[10px] rounded px-1.5 py-1 w-full border border-gray-600 focus:border-[#FF462D] focus:outline-none"
+                          >
+                            {models.available.map((m) => (
+                              <option key={m.id} value={m.id}>{m.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </>
@@ -146,7 +183,7 @@ export default function Sidebar({ selectedCompany, onSelectCompany, onGcpConfigC
           <span>powered by</span>
           <img src="/Kyndryl_logo.png" alt="Kyndryl" className="h-5 inline" />
           <span className="opacity-50">|</span>
-          <span>v5.3.1</span>
+          <span>v5.5.0</span>
         </div>
       </aside>
       )}

@@ -24,6 +24,33 @@ export async function fetchMe(): Promise<UserInfo> {
   return res.json();
 }
 
+export interface ModelInfo {
+  id: string;
+  name: string;
+  provider: string;
+  speed: string;
+  cost: string;
+}
+
+export interface ModelsResponse {
+  current: { router: string; fast: string; deep: string; supplement: string };
+  available: ModelInfo[];
+}
+
+export async function fetchModels(): Promise<ModelsResponse> {
+  const res = await fetch(`${API_BASE}/api/models`);
+  return res.json();
+}
+
+export async function switchModel(role: string, modelId: string): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/models/switch`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ role, model_id: modelId }),
+  });
+  return res.json();
+}
+
 export interface Company {
   display_name: string;
   folder_name: string;

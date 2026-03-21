@@ -152,11 +152,11 @@ class ADKReasoningEngine:
                         "dip_root_agent": "ルーター",
                     }
                     agent_models = {
-                        "analysis_agent": "Gemini 2.5 Pro",
-                        "comparison_agent": "Gemini 2.5 Pro",
-                        "forecast_agent": "Gemini 2.5 Pro",
-                        "general_agent": "Gemini 2.5 Flash",
-                        "dip_root_agent": "Gemini 2.5 Flash",
+                        "analysis_agent": MODELS.deep,
+                        "comparison_agent": MODELS.deep,
+                        "forecast_agent": MODELS.deep,
+                        "general_agent": MODELS.fast,
+                        "dip_root_agent": MODELS.router,
                     }
                     label = agent_labels.get(event.author, event.author)
                     model = agent_models.get(event.author, "")
