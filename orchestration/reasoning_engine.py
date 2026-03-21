@@ -570,16 +570,19 @@ class ReasoningEngine:
 html,body{{width:100%;min-height:100%;background:#0e1117;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#fff}}
 .root{{
   display:grid;
-  grid-template-columns:1.2fr 1fr 1fr;
-  grid-template-rows:auto auto;
+  grid-template-columns:1fr;
+  grid-template-rows:auto;
   gap:12px;
   padding:18px;
   min-height:100%;
   background:#0e1117;
 }}
+@media(min-width:768px){{
+  .root{{grid-template-columns:1.2fr 1fr 1fr;grid-template-rows:auto auto;}}
+  .header{{grid-column:1/-1;}}
+}}
 .header{{
-  grid-column:1/-1;
-  display:flex;align-items:baseline;gap:16px;
+  display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;
   border-bottom:1px solid rgba(255,255,255,0.12);
   padding-bottom:10px;
 }}
@@ -615,7 +618,8 @@ html,body{{width:100%;min-height:100%;background:#0e1117;font-family:-apple-syst
   border-radius:12px;
 }}
 .kpi-label{{font-size:12px;color:rgba(255,255,255,0.55);margin-bottom:6px;}}
-.kpi-value{{font-size:30px;font-weight:800;color:{accent};line-height:1;}}
+.kpi-value{{font-size:22px;font-weight:800;color:{accent};line-height:1;}}
+@media(min-width:768px){{.kpi-value{{font-size:30px;}}}}
 .kpi-delta{{font-size:14px;font-weight:600;color:{accent};margin-left:10px;opacity:.8;}}
 .insight-list{{display:flex;flex-direction:column;flex:1;justify-content:flex-start;}}
 .insight-row{{

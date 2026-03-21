@@ -38,6 +38,7 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState("");
+  const [rightDrawerOpen, setRightDrawerOpen] = useState(false);
   const [loadingStartTime, setLoadingStartTime] = useState(0);
   const [elapsedSec, setElapsedSec] = useState(0);
   const [streamingText, setStreamingText] = useState("");
@@ -226,35 +227,43 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
       {/* 左カラム: チャット — height:100vh flex column, スクロールはbodyに委ねる */}
       <div className="flex-1 h-screen flex flex-col min-w-0 overflow-y-auto">
         {/* タイトル行 */}
-        <div className="sticky top-0 z-10 flex items-center justify-between pl-14 pr-6 py-3 border-b border-gray-800 bg-[#0A0E14]">
+        <div className="sticky top-0 z-10 flex items-center justify-between pl-14 pr-3 md:pr-6 py-3 border-b border-gray-800 bg-[#0A0E14]">
           <div>
-            <span className="text-xs text-gray-400 tracking-wider">DIP | Decision Intelligence Platform</span>
-            <h2 className="text-lg font-bold text-white">{company.display_name}</h2>
+            <span className="text-xs text-gray-400 tracking-wider hidden md:inline">DIP | Decision Intelligence Platform</span>
+            <span className="text-xs text-gray-400 tracking-wider md:hidden">DIP</span>
+            <h2 className="text-base md:text-lg font-bold text-white truncate">{company.display_name}</h2>
           </div>
           <div className="flex items-center gap-3">
             {isLoading && (
               <div className="flex items-center gap-2 text-gray-400">
                 <div className="w-3 h-3 rounded-full border-2 border-gray-500 border-t-green-500 animate-spin flex-shrink-0" />
-                <span className="text-xs">{status}（{elapsedSec}秒）</span>
+                <span className="text-xs hidden md:inline">{status}（{elapsedSec}秒）</span>
               </div>
             )}
             {supplementLoading && (
               <div className="flex items-center gap-2 text-gray-400">
                 <div className="w-3 h-3 rounded-full border-2 border-gray-500 border-t-green-500 animate-spin flex-shrink-0" />
-                <span className="text-xs">補足情報を整理しています…</span>
+                <span className="text-xs hidden md:inline">補足情報を整理しています…</span>
               </div>
             )}
             <button
               onClick={handleNewChat}
-              className="text-sm text-gray-300 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors"
+              className="text-xs md:text-sm text-gray-300 bg-gray-800 hover:bg-gray-700 px-3 md:px-4 py-2 rounded-lg transition-colors flex-shrink-0"
             >
-              新規チャット
+              新規
+            </button>
+            <button
+              onClick={() => setRightDrawerOpen(true)}
+              className="lg:hidden text-lg text-gray-300 hover:text-white px-1 py-1 transition-colors flex-shrink-0"
+              title="情報パネル"
+            >
+              ℹ️
             </button>
           </div>
         </div>
 
         {/* メッセージエリア */}
-        <div className="flex-1 p-6 pb-24 space-y-4 mx-auto max-w-4xl w-full">
+        <div className="flex-1 p-3 md:p-6 pb-24 space-y-4 mx-auto max-w-4xl w-full">
           <SmartCards
             folderName={company.folder_name}
             onCardClick={handleSmartCardClick}
@@ -347,7 +356,7 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
         </div>
 
         {/* 入力欄 */}
-        <div className="sticky bottom-0 z-10 p-4 bg-[#0A0E14]">
+        <div className="sticky bottom-0 z-10 p-2 md:p-4 bg-[#0A0E14]">
           {/* 深掘り質問 + 質問履歴 */}
           {(() => {
             const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
@@ -394,8 +403,8 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
         </div>
       </div>
 
-      {/* 右カラム: 情報パネル（左サイドバーと同じ幅） */}
-      <div className="w-72 flex-shrink-0 border-l border-gray-700 bg-gray-900">
+      {/* 右カラム: 情報パネル — lg以上で常時表示 */}
+      <div className="hidden lg:block w-72 flex-shrink-0 border-l border-gray-700 bg-gray-900">
         <RightColumn
           folderName={company.folder_name}
           projectId={projectId}
@@ -404,6 +413,28 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
           thoughtProcess={thoughtProcess}
         />
       </div>
+
+      {/* 右ドロワー: lg未満でℹ️ボタン押下時にスライドイン */}
+      {rightDrawerOpen && (
+        <div className="lg:hidden fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setRightDrawerOpen(false)} />
+          <div className="absolute right-0 top-0 h-full w-72 bg-gray-900 border-l border-gray-700 shadow-xl animate-[slideInRight_0.2s_ease-out]">
+            <button
+              onClick={() => setRightDrawerOpen(false)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg p-2 transition-colors"
+            >
+              ✕
+            </button>
+            <RightColumn
+              folderName={company.folder_name}
+              projectId={projectId}
+              gcsBucket={gcsBucket}
+              flowSteps={flowSteps}
+              thoughtProcess={thoughtProcess}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

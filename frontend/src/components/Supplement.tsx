@@ -46,7 +46,7 @@ export default function Supplement({
           className="text-xs text-gray-400 hover:text-gray-300 disabled:opacity-50 flex items-center gap-1"
         >
           <span>▶</span>
-          <span>{ddLoading ? "生成中..." : "深掘り質問AI生成"}</span>
+          <span>{ddLoading ? "生成中..." : "深掘り質問"}</span>
         </button>
       )}
 
@@ -57,7 +57,7 @@ export default function Supplement({
             className="text-xs text-gray-400 hover:text-gray-300 flex items-center gap-1"
           >
             <span>{ddOpen ? "▼" : "▶"}</span>
-            <span>深掘り質問AI生成（{deepDive.length}件）</span>
+            <span>深掘り質問（{deepDive.length}件）</span>
           </button>
           {ddOpen && deepDive.map((q, i) => (
             <button

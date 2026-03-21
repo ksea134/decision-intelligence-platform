@@ -21,7 +21,7 @@ export default function QuestionHistory({ history, onRerun, onDelete }: Question
         className="text-xs text-gray-400 hover:text-gray-300 flex items-center gap-1"
       >
         <span>{open ? "▼" : "▶"}</span>
-        <span>直近の質問一覧（{history.length}件）</span>
+        <span>直近の質問（{history.length}件）</span>
       </button>
       {open && (
         <div className="mt-1 space-y-1">

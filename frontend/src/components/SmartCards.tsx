@@ -23,14 +23,14 @@ export default function SmartCards({ folderName, onCardClick, visible }: SmartCa
   return (
     <div className="mb-6">
       <span className="text-xs text-gray-400 tracking-wider">DI Dashboard</span>
-      <div className="grid grid-cols-5 gap-2 mt-2">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 mt-2">
         {cards.map((card) => (
           <button
             key={card.id}
             onClick={() => onCardClick(card)}
             className="group flex flex-col items-center justify-center text-center
                        bg-gradient-to-br from-gray-800 to-gray-900
-                       border border-gray-700 rounded-xl p-3 h-36
+                       border border-gray-700 rounded-xl p-3 h-28 md:h-36
                        hover:border-[#29707A] hover:from-gray-700 hover:to-gray-800
                        transition-all duration-200 cursor-pointer"
           >
