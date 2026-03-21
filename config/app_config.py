@@ -103,8 +103,8 @@ class ModelConfig:
     AVAILABLE_MODELS = [
         {"id": "gemini-2.5-flash", "name": "Gemini 2.5 Flash", "provider": "Google", "speed": "高速", "cost": "低"},
         {"id": "gemini-2.5-pro", "name": "Gemini 2.5 Pro", "provider": "Google", "speed": "標準", "cost": "中"},
-        {"id": "claude-sonnet-4-6", "name": "Claude Sonnet 4.6", "provider": "Anthropic", "speed": "標準", "cost": "中"},
-        {"id": "claude-haiku-4-5", "name": "Claude Haiku 4.5", "provider": "Anthropic", "speed": "高速", "cost": "低"},
+        {"id": "claude-sonnet-4-6", "name": "Claude Sonnet 4.6（後日ADK対応）", "provider": "Anthropic", "speed": "標準", "cost": "中"},
+        {"id": "claude-haiku-4-5", "name": "Claude Haiku 4.5（後日ADK対応）", "provider": "Anthropic", "speed": "高速", "cost": "低"},
     ]
 
     def to_dict(self) -> dict:
