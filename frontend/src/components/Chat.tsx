@@ -395,15 +395,26 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
               style={{ minHeight: "44px", maxHeight: "120px" }}
               ref={(el) => { if (el) { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 120) + "px"; } }}
             />
-            <button
-              type="submit"
-              disabled={isLoading || !input.trim()}
-              className="bg-[#FF462D] text-white rounded-lg px-6 py-3 text-sm font-bold
-                         hover:bg-[#FF462D] disabled:opacity-50 disabled:hover:bg-[#FF462D]
-                         transition-colors"
-            >
-              送信
-            </button>
+            {isLoading ? (
+              <button
+                type="button"
+                onClick={() => { abortRef.current?.abort(); setIsLoading(false); setStatus(""); }}
+                className="bg-gray-600 text-white rounded-lg px-6 py-3 text-sm font-bold
+                           hover:bg-gray-500 transition-colors"
+              >
+                停止
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!input.trim()}
+                className="bg-[#FF462D] text-white rounded-lg px-6 py-3 text-sm font-bold
+                           hover:bg-[#FF462D] disabled:opacity-50 disabled:hover:bg-[#FF462D]
+                           transition-colors"
+              >
+                送信
+              </button>
+            )}
           </form>
         </div>
       </div>
