@@ -107,7 +107,7 @@ class ADKReasoningEngine:
             prompts=data_ctx.assets.prompt_text,
             past_qa_context=past_qa_context,
         )
-        flow_steps.append({"step": "ルートエージェント", "done": True, "detail": "質問を分析中"})
+        flow_steps.append({"step": "ルートエージェント", "done": True, "detail": "質問を分析"})
 
         # ADK Runner を作成・実行
         import asyncio

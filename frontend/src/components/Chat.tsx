@@ -237,7 +237,9 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
             {isLoading && (
               <div className="flex items-center gap-2 text-gray-400">
                 <div className="w-3 h-3 rounded-full border-2 border-gray-500 border-t-green-500 animate-spin flex-shrink-0" />
-                <span className="text-xs hidden md:inline">{status}（{elapsedSec}秒）</span>
+                {streamingText && (
+                  <span className="text-xs hidden md:inline">{status}（{elapsedSec}秒）</span>
+                )}
               </div>
             )}
             {supplementLoading && (
