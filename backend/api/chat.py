@@ -28,6 +28,7 @@ from config.app_config import APP, PATHS
 from config.cloud_config import CloudConfig
 from domain.models import CloudDataResult
 from backend.ops.request_logger import log_request
+from backend.ops.metrics import record_response_time, record_error
 
 logger = logging.getLogger(__name__)
 
@@ -353,18 +354,23 @@ async def chat(request: ChatRequest) -> EventSourceResponse:
                 pass  # 保存失敗はチャット動作に影響させない
 
             # リクエストログ記録
+            engine_type = "v1" if is_smart_card else "adk"
             log_request(
                 question=request.question or request.smart_card_id or "",
                 company=request.company_display_name,
                 source=request.source,
-                engine="v1" if is_smart_card else "adk",
+                engine=engine_type,
                 elapsed_seconds=elapsed,
                 response_length=len(parsed.display_text),
                 files_count=len(parsed.files),
             )
+            # メトリクス記録（応答時間）
+            record_response_time(elapsed, engine_type, request.company_display_name)
 
         except Exception as e:
             logger.error("[ERROR] /api/chat: %s", e, exc_info=True)
+            # メトリクス記録（エラー）
+            record_error("unknown", request.company_display_name, type(e).__name__)
             log_request(
                 question=request.question or request.smart_card_id or "",
                 company=request.company_display_name,
