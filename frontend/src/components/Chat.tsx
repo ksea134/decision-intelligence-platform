@@ -250,7 +250,7 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
             )}
             <button
               onClick={handleNewChat}
-              className="text-xs md:text-sm text-gray-300 bg-gray-800 hover:bg-gray-700 px-3 md:px-4 py-2 rounded-lg transition-colors flex-shrink-0"
+              className="text-sm font-bold text-gray-300 bg-gray-800 hover:bg-gray-700 px-6 py-3 rounded-lg transition-colors flex-shrink-0"
             >
               新規
             </button>
