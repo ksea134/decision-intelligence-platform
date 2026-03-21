@@ -141,7 +141,8 @@ def _run_engine(
 
         from orchestration.agents.data_agent import DataAgent
         agent = DataAgent(cfg)
-        client = genai.Client()
+        from orchestration.llm_client import _get_gemini_client
+        client = _get_gemini_client()
 
         # B4: 共有メモリを使用（会話履歴引き継ぎ）
         engine_v1 = ReasoningEngine(

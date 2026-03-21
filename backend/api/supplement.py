@@ -49,7 +49,8 @@ def generate_supplement(request: SupplementRequest) -> dict:
         )
 
         assets = load_company_assets(base_dir)
-        client = genai.Client()
+        from orchestration.llm_client import _get_gemini_client
+        client = _get_gemini_client()
         agent = DataAgent(cfg)
         memory = SessionMemory()
         engine = ReasoningEngine(client=client, data_agent=agent, memory=memory, search_client=None)
@@ -110,7 +111,8 @@ def generate_deep_dive(request: DeepDiveRequest) -> dict:
             gcs_bucket=request.gcs_bucket,
             folder_name=request.company_folder_name,
         )
-        client = genai.Client()
+        from orchestration.llm_client import _get_gemini_client
+        client = _get_gemini_client()
         agent = DataAgent(cfg)
         memory = SessionMemory()
         engine = ReasoningEngine(client=client, data_agent=agent, memory=memory, search_client=None)
