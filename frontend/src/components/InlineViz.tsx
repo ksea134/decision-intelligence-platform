@@ -13,6 +13,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import MermaidChart from "./MermaidChart";
 
 // Chart.js のコンポーネント登録
 ChartJS.register(
@@ -22,10 +23,11 @@ ChartJS.register(
 
 export interface VizSegment {
   type: "viz";
-  chart_type: "bar" | "line" | "pie";
+  chart_type: "bar" | "line" | "pie" | "mermaid";
   title: string;
-  labels: string[];
-  data: number[];
+  labels?: string[];
+  data?: number[];
+  code?: string;
 }
 
 interface InlineVizProps {
@@ -46,7 +48,16 @@ const COLORS = [
 const BORDER_COLORS = COLORS.map((c) => c.replace("0.8", "1"));
 
 export default function InlineViz({ segment }: InlineVizProps) {
-  const { chart_type, title, labels, data } = segment;
+  const { chart_type, title } = segment;
+
+  // Mermaid描画
+  if (chart_type === "mermaid" && segment.code) {
+    return <MermaidChart code={segment.code} title={title} />;
+  }
+
+  // Chart.js描画（bar/line/pie）
+  const labels = segment.labels || [];
+  const data = segment.data || [];
 
   const chartData = {
     labels,
