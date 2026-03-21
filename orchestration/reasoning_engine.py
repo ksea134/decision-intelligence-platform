@@ -173,7 +173,7 @@ class ReasoningEngine:
         flow_steps = []
 
         # ── Phase 0: 質問理解 + 過去事例検索 ──
-        flow_steps.append({"step": "質問理解", "done": True})
+        flow_steps.append({"step": "質問理解", "done": True, "detail": MODELS.fast})
 
         past_qa_context = ""
         if self._search_client and self._search_client.is_ready():
@@ -225,7 +225,7 @@ class ReasoningEngine:
             flow_steps.append({"step": "データ取得", "done": True, "detail": "ローカル/GCSデータを使用"})
 
         # ── Phase 2: 回答生成（ストリーミング） ──
-        flow_steps.append({"step": "回答生成", "done": False})
+        flow_steps.append({"step": "回答生成", "done": False, "detail": MODELS.fast})
         yield {"flow_steps": list(flow_steps)}
         sys_prompt = build_system_prompt(
             company=company,

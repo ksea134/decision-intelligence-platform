@@ -69,7 +69,7 @@ class ADKReasoningEngine:
 
         # AI処理フロー記録
         flow_steps = []
-        flow_steps.append({"step": "質問理解", "done": True})
+        flow_steps.append({"step": "質問理解", "done": True, "detail": MODELS.router})
 
         # ツールコンテキストを設定
         set_tool_context(
@@ -196,7 +196,7 @@ class ADKReasoningEngine:
         if _tools._last_bq_tables:
             yield {"bq_tables": list(_tools._last_bq_tables)}
 
-        flow_steps.append({"step": "回答生成", "done": True})
+        flow_steps.append({"step": "回答生成", "done": True, "detail": MODELS.deep})
         yield {"flow_steps": list(flow_steps)}
 
         # Q&A自動保存（Vertex AI Search）
