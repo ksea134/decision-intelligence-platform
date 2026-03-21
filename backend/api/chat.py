@@ -292,8 +292,16 @@ async def chat(request: ChatRequest) -> EventSourceResponse:
             parsed = parse_llm_response(full_text)
 
             # --- InlineVizセグメント分割 ---
+            # ADKテンプレート回避で全角波括弧にした影響で、Geminiが全角で出力するケースを補正
+            viz_text = parsed.display_text.replace("｛", "{").replace("｝", "}")
             from domain.viz_parser import parse_viz_segments
-            segments = parse_viz_segments(parsed.display_text)
+            segments = parse_viz_segments(viz_text)
+
+            # --- Mermaidフローチャート自動生成（C08: コード側で変換） ---
+            from domain.step_to_mermaid import maybe_generate_mermaid_segments, inject_all_mermaids_into_segments
+            mermaid_segs = maybe_generate_mermaid_segments(request.question or "", parsed.display_text)
+            if mermaid_segs:
+                segments = inject_all_mermaids_into_segments(segments, mermaid_segs)
 
             # SQL実行ログ情報
             sql_query = out_data.get("executed_sql") or parsed.sql or ""

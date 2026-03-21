@@ -14,7 +14,6 @@ interface MermaidChartProps {
 export default function MermaidChart({ code, title }: MermaidChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
-  const [rendered, setRendered] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -23,10 +22,10 @@ export default function MermaidChart({ code, title }: MermaidChartProps) {
       if (!containerRef.current || !code.trim()) return;
 
       try {
-        // dynamic import（SSR回避）
         const mermaid = (await import("mermaid")).default;
         mermaid.initialize({
           startOnLoad: false,
+          suppressErrorRendering: true,
           theme: "dark",
           themeVariables: {
             primaryColor: "#1e3a5f",
@@ -40,18 +39,27 @@ export default function MermaidChart({ code, title }: MermaidChartProps) {
           flowchart: { curve: "basis", padding: 15 },
         });
 
-        const id = `mermaid-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        // 既存のエラー要素をクリア
+        containerRef.current.innerHTML = "";
+
+        const id = `m${Date.now()}${Math.random().toString(36).slice(2, 6)}`;
+
+        // parse で事前にバリデーション
+        const valid = await mermaid.parse(code.trim(), { suppressErrors: true });
+        if (!valid) {
+          if (!cancelled) setError("Mermaid記法が不正です");
+          return;
+        }
+
         const { svg } = await mermaid.render(id, code.trim());
 
         if (!cancelled && containerRef.current) {
           containerRef.current.innerHTML = svg;
-          setRendered(true);
           setError(null);
         }
       } catch (e) {
         if (!cancelled) {
           setError(e instanceof Error ? e.message : "Mermaid描画エラー");
-          setRendered(false);
         }
       }
     }

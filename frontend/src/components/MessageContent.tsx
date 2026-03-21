@@ -7,10 +7,11 @@ import InlineViz, { VizSegment } from "./InlineViz";
 export interface Segment {
   type: "text" | "viz";
   content?: string;
-  chart_type?: "bar" | "line" | "pie";
+  chart_type?: "bar" | "line" | "pie" | "mermaid";
   title?: string;
   labels?: string[];
   data?: number[];
+  code?: string;
 }
 
 interface MessageContentProps {
@@ -45,7 +46,7 @@ export default function MessageContent({ segments, fallbackText }: MessageConten
             </ReactMarkdown>
           );
         }
-        if (seg.type === "viz" && seg.chart_type && seg.labels && seg.data) {
+        if (seg.type === "viz" && seg.chart_type) {
           return (
             <InlineViz
               key={i}

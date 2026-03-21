@@ -164,24 +164,30 @@ def build_root_agent(
     if company:
         company_context += f"\n\n対象企業: {company}\n"
     if bq_schema:
-        company_context += f"\nBigQueryスキーマ:\n{bq_schema}\n"
+        safe_bq_schema = bq_schema.replace("{", "｛").replace("}", "｝") if isinstance(bq_schema, str) else str(bq_schema).replace("{", "｛").replace("}", "｝")
+        company_context += f"\nBigQueryスキーマ:\n{safe_bq_schema}\n"
     if gcs_docs:
+        # ADKがinstruction内の{...}をテンプレート変数と誤認するため、波括弧を全角に変換
+        safe_gcs_docs = gcs_docs.replace("{", "｛").replace("}", "｝")
         company_context += (
             "\n【GCS資料（報告書・分析レポート — 必ず回答に反映すること）】\n"
             "※以下の資料には数値の背景・原因・考察が含まれている。\n"
             "※数値データ（BigQuery）と合わせて、資料の内容も必ず踏まえて回答すること。\n"
             "※数値だけの回答は不十分。資料に書かれた背景・要因・提言も含めること。\n"
-            f"{gcs_docs}\n"
+            f"{safe_gcs_docs}\n"
         )
     if past_qa_context:
+        safe_past_qa = past_qa_context.replace("{", "｛").replace("}", "｝")
         company_context += (
             "\n【過去の類似Q&A — 参考にして回答の一貫性を保つこと】\n"
-            f"{past_qa_context}\n"
+            f"{safe_past_qa}\n"
         )
     if knowledge:
-        company_context += f"\n企業前提知識:\n{knowledge}\n"
+        safe_knowledge = knowledge.replace("{", "｛").replace("}", "｝")
+        company_context += f"\n企業前提知識:\n{safe_knowledge}\n"
     if prompts:
-        company_context += f"\n回答スタイル指示:\n{prompts}\n"
+        safe_prompts = prompts.replace("{", "｛").replace("}", "｝")
+        company_context += f"\n回答スタイル指示:\n{safe_prompts}\n"
 
     # 出典情報の記載ルール（全エージェント共通）
     company_context += (
@@ -194,7 +200,7 @@ def build_root_agent(
         "\n\n【チャート描画タグ（任意）】\n"
         "数値データをチャートで可視化すると理解が深まる箇所には、以下の形式で <viz> タグを挿入:\n"
         '<viz type="bar" title="タイトル">\n'
-        '{"labels": ["A","B","C"], "data": [100,200,150]}\n'
+        '｛"labels": ["A","B","C"], "data": [100,200,150]｝\n'
         "</viz>\n"
         '使えるtype: "bar"（比較）, "line"（推移）, "pie"（構成比）。最大3つまで。不要なら使わない。\n'
     )
