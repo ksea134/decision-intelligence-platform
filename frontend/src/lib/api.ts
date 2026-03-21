@@ -6,10 +6,17 @@ export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:800
 
 export const IS_LOCAL = API_BASE.includes("localhost");
 
+export interface GcpService {
+  name: string;
+  status: "active" | "planned";
+  purpose: string;
+}
+
 export interface UserInfo {
   email: string;
   name: string;
   role: string;
+  gcp_services?: GcpService[];
 }
 
 export async function fetchMe(): Promise<UserInfo> {

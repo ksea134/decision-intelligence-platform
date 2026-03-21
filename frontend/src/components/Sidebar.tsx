@@ -114,6 +114,28 @@ export default function Sidebar({ selectedCompany, onSelectCompany, onGcpConfigC
                   placeholder="GCS Bucket Name"
                   className="bg-gray-800 text-white text-xs rounded px-2 py-1.5 w-full border border-gray-600 focus:border-[#FF462D] focus:outline-none"
                 />
+                {/* GCPサービス一覧 */}
+                {user?.gcp_services && (
+                  <div className="mt-2">
+                    <div className="text-xs text-gray-500 mb-1">GCPサービス</div>
+                    <div className="space-y-0.5">
+                      {user.gcp_services.filter(s => s.status === "active").map((s, i) => (
+                        <div key={i} className="flex items-center gap-1.5 text-xs">
+                          <span className="text-green-400">●</span>
+                          <span className="text-gray-300">{s.name}</span>
+                          <span className="text-gray-600 text-[10px]">{s.purpose}</span>
+                        </div>
+                      ))}
+                      {user.gcp_services.filter(s => s.status === "planned").map((s, i) => (
+                        <div key={`p${i}`} className="flex items-center gap-1.5 text-xs">
+                          <span className="text-gray-600">○</span>
+                          <span className="text-gray-500">{s.name}</span>
+                          <span className="text-gray-600 text-[10px]">{s.purpose}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </>
