@@ -2,7 +2,20 @@
  * API client for DIP backend
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+export const IS_LOCAL = API_BASE.includes("localhost");
+
+export interface UserInfo {
+  email: string;
+  name: string;
+  role: string;
+}
+
+export async function fetchMe(): Promise<UserInfo> {
+  const res = await fetch(`${API_BASE}/api/me`);
+  return res.json();
+}
 
 export interface Company {
   display_name: string;
