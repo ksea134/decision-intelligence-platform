@@ -263,19 +263,14 @@ class ReasoningEngine:
 
         yield {"status": "回答を生成しています..."}
 
-        config = types.GenerateContentConfig(
-            system_instruction=sys_prompt,
-            tools=None,
-            temperature=0.0,
-        )
-        response_stream = self._client.models.generate_content_stream(
+        from orchestration.llm_client import generate_stream
+        for chunk in generate_stream(
             model=MODELS.fast,
             contents=current_history,
-            config=config,
-        )
-        for chunk in response_stream:
-            if chunk.text:
-                yield chunk.text
+            system_instruction=sys_prompt,
+            temperature=0.0,
+        ):
+            yield chunk
 
         # 回答生成完了 → フロー最終状態をyield
         flow_steps[-1]["done"] = True  # 回答生成を完了に
@@ -473,11 +468,8 @@ class ReasoningEngine:
         return "".join(chunks), out_data
 
     def _generate_text(self, prompt: str) -> str:
-        response = self._client.models.generate_content(
-            model=MODELS.fast,
-            contents=prompt,
-        )
-        return response.text.strip()
+        from orchestration.llm_client import generate_text
+        return generate_text(model=MODELS.supplement, contents=prompt)
 
     def _extract_json(self, text: str) -> Any:
         cleaned = text.strip().replace("```json", "").replace("```", "").strip()

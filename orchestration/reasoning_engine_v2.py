@@ -649,12 +649,9 @@ class ReasoningEngineV2:
     # ----------------------------------------------------------
     
     def _generate_text(self, prompt: str) -> str:
-        """Gemini でテキストを生成する"""
-        response = self._client.models.generate_content(
-            model=MODELS.supplement,  # 補足生成
-            contents=prompt,
-        )
-        return response.text.strip()
+        """LLMでテキストを生成する（Gemini/Claude自動切替）"""
+        from orchestration.llm_client import generate_text
+        return generate_text(model=MODELS.supplement, contents=prompt)
     
     def _extract_json(self, text: str) -> Any:
         """テキストから JSON を抽出する"""

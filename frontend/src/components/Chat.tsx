@@ -385,7 +385,7 @@ export default function Chat({ company, projectId, gcsBucket }: ChatProps) {
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(e); } }}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); handleSubmit(e); } }}
               placeholder={messages.length === 0 ? "本日はどのようなお手伝いをしましょうか。" : "追加でご質問はございますか。"}
               disabled={isLoading}
               rows={1}
