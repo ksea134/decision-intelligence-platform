@@ -218,7 +218,7 @@ class ReasoningEngine:
             bq_data_csv = self._fetch_bq_data(user_prompt, data_ctx)
             if self._last_sql_result:
                 yield self._last_sql_result
-                flow_steps.append({"step": "データ取得", "done": True, "detail": "BigQueryからデータ取得完了"})
+                flow_steps.append({"step": "データ取得", "done": True, "detail": "BigQueryからデータ取得"})
             else:
                 flow_steps.append({"step": "データ取得", "done": True, "detail": "データなし"})
         else:
