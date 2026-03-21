@@ -42,6 +42,20 @@ export async function fetchModels(): Promise<ModelsResponse> {
   return res.json();
 }
 
+export interface AgentInfo {
+  name: string;
+  display_name: string;
+  model_role: string;
+  current_model: string;
+  triggers: string[];
+}
+
+export async function fetchAgents(): Promise<AgentInfo[]> {
+  const res = await fetch(`${API_BASE}/api/agents`);
+  const data = await res.json();
+  return data.agents || [];
+}
+
 export async function switchModel(role: string, modelId: string): Promise<any> {
   const res = await fetch(`${API_BASE}/api/models/switch`, {
     method: "POST",

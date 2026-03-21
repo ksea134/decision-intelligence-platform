@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Company, UserInfo, ModelsResponse, fetchCompanies, fetchMe, fetchModels, switchModel, API_BASE, IS_LOCAL } from "@/lib/api";
+import { Company, UserInfo, ModelsResponse, AgentInfo, fetchCompanies, fetchMe, fetchModels, fetchAgents, switchModel, API_BASE, IS_LOCAL } from "@/lib/api";
 
 interface SidebarProps {
   selectedCompany: Company | null;
@@ -18,11 +18,13 @@ export default function Sidebar({ selectedCompany, onSelectCompany, onGcpConfigC
   const [user, setUser] = useState<UserInfo | null>(null);
   const [devOpen, setDevOpen] = useState(false);
   const [models, setModels] = useState<ModelsResponse | null>(null);
+  const [agents, setAgents] = useState<AgentInfo[]>([]);
 
   useEffect(() => {
     fetchCompanies().then(setCompanies);
     fetchMe().then(setUser);
     fetchModels().then(setModels);
+    fetchAgents().then(setAgents);
   }, []);
 
   const handleModelSwitch = async (role: string, modelId: string) => {
@@ -151,6 +153,21 @@ export default function Sidebar({ selectedCompany, onSelectCompany, onGcpConfigC
                     </div>
                   </div>
                 )}
+                {/* エージェント一覧 */}
+                {agents.length > 0 && (
+                  <div className="mt-2">
+                    <div className="text-xs text-gray-500 mb-1">エージェントAI</div>
+                    <div className="space-y-0.5">
+                      {agents.map((a, i) => (
+                        <div key={i} className="flex items-center gap-1.5 text-xs">
+                          <span className="text-[#4CDD84]">●</span>
+                          <span className="text-gray-300">{a.display_name}</span>
+                          <span className="text-gray-600 text-[10px]">{a.current_model}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {/* モデル設定 */}
                 {models && (
                   <div className="mt-2">
@@ -183,7 +200,7 @@ export default function Sidebar({ selectedCompany, onSelectCompany, onGcpConfigC
           <span>powered by</span>
           <img src="/Kyndryl_logo.png" alt="Kyndryl" className="h-5 inline" />
           <span className="opacity-50">|</span>
-          <span>v5.6.0</span>
+          <span>v5.7.0</span>
         </div>
       </aside>
       )}
