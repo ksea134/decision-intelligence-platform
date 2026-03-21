@@ -31,6 +31,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, asdict
 from typing import Any, Generator, Optional
 
+from config.app_config import MODELS
 from orchestration.graph.state import AgentResult, WorkflowState, create_initial_state
 from orchestration.graph.workflow import run_workflow, compile_workflow
 
@@ -650,7 +651,7 @@ class ReasoningEngineV2:
     def _generate_text(self, prompt: str) -> str:
         """Gemini でテキストを生成する"""
         response = self._client.models.generate_content(
-            model="gemini-2.5-flash",  # 補足生成は Flash で十分
+            model=MODELS.supplement,  # 補足生成
             contents=prompt,
         )
         return response.text.strip()

@@ -26,9 +26,11 @@ logger = logging.getLogger(__name__)
 # ============================================================
 # モデル設定 — エージェントごとに最適なモデルを選択
 # ============================================================
-MODEL_ROUTER  = "gemini-2.5-flash"   # ルーター: 高速・低コスト（分類のみ）
-MODEL_FAST    = "gemini-2.5-flash"   # 汎用回答: 高速・低コスト
-MODEL_DEEP    = "gemini-2.5-pro"     # 分析・比較・予測: 高精度・深い推論
+from config.app_config import MODELS
+
+MODEL_ROUTER  = MODELS.router   # ルーター: 高速・低コスト（分類のみ）
+MODEL_FAST    = MODELS.fast     # 汎用回答: 高速・低コスト
+MODEL_DEEP    = MODELS.deep     # 分析・比較・予測: 高精度・深い推論
 
 
 # ============================================================

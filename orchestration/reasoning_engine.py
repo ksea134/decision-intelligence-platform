@@ -9,7 +9,7 @@ from typing import Any, Generator
 from google import genai
 from google.genai import types
 
-from config.app_config import APP
+from config.app_config import APP, MODELS
 from config.cloud_config import CloudConfig
 from domain.models import ChatMessage, MessageArtifacts, ParsedResponse, SQLResult
 from domain.prompt_builder import build_system_prompt
@@ -269,7 +269,7 @@ class ReasoningEngine:
             temperature=0.0,
         )
         response_stream = self._client.models.generate_content_stream(
-            model=APP.gemini_model,
+            model=MODELS.fast,
             contents=current_history,
             config=config,
         )
@@ -474,7 +474,7 @@ class ReasoningEngine:
 
     def _generate_text(self, prompt: str) -> str:
         response = self._client.models.generate_content(
-            model=APP.gemini_model,
+            model=MODELS.fast,
             contents=prompt,
         )
         return response.text.strip()

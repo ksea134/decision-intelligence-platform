@@ -22,7 +22,7 @@ from google.adk.agents import LlmAgent
 from google.adk.runners import InMemoryRunner
 from google.genai import types
 
-from config.app_config import APP
+from config.app_config import APP, MODELS
 from config.cloud_config import CloudConfig
 from domain.prompt_builder import build_system_prompt
 from orchestration.agents.data_agent import DataAgent, DataContext
@@ -241,7 +241,7 @@ class ADKReasoningEngine:
         )
         try:
             response = self._client.models.generate_content(
-                model=APP.gemini_model,
+                model=MODELS.supplement,
                 contents=prompt,
             )
             return (response.text or "").strip()
