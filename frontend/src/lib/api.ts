@@ -37,6 +37,22 @@ export interface ModelsResponse {
   available: ModelInfo[];
 }
 
+export async function postFeedback(data: {
+  question: string;
+  answer_preview: string;
+  company: string;
+  rating: "good" | "bad";
+  comment?: string;
+  engine?: string;
+}): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/feedback`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
 export async function fetchModels(): Promise<ModelsResponse> {
   const res = await fetch(`${API_BASE}/api/models`);
   return res.json();
