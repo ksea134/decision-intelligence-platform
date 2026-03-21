@@ -32,6 +32,12 @@ _RE_VIZ_MERMAID = re.compile(
     re.DOTALL,
 )
 
+# マークダウンの ```mermaid コードブロック（Geminiが自然に出力する形式）
+_RE_MD_MERMAID = re.compile(
+    r'```mermaid\s*\n(.*?)```',
+    re.DOTALL,
+)
+
 
 def parse_viz_segments(text: str) -> list[dict[str, Any]]:
     """
@@ -71,7 +77,7 @@ def parse_viz_segments(text: str) -> list[dict[str, Any]]:
         except (json.JSONDecodeError, KeyError) as e:
             logger.warning("[VizParser] JSON parse error: %s", e)
 
-    # mermaid
+    # mermaid（<viz>タグ形式）
     for match in _RE_VIZ_MERMAID.finditer(text):
         title = match.group(1) or ""
         code = match.group(2).strip()
@@ -82,6 +88,20 @@ def parse_viz_segments(text: str) -> list[dict[str, Any]]:
                 "title": title,
                 "code": code,
             }))
+
+    # mermaid（```mermaid コードブロック形式）
+    for match in _RE_MD_MERMAID.finditer(text):
+        code = match.group(1).strip()
+        if code:
+            # <viz>タグ形式と重複していない場合のみ追加
+            overlap = any(s <= match.start() < e or s < match.end() <= e for s, e, _ in matches)
+            if not overlap:
+                matches.append((match.start(), match.end(), {
+                    "type": "viz",
+                    "chart_type": "mermaid",
+                    "title": "",
+                    "code": code,
+                }))
 
     # 位置順にソート
     matches.sort(key=lambda x: x[0])
