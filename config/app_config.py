@@ -84,8 +84,41 @@ class PathConfig:
     smart_cards:  str = "smart_cards"
 
 
+class ModelConfig:
+    """
+    AIモデル設定（ミュータブル — 実行中に切り替え可能）。
+
+    エージェントの役割ごとに最適なモデルを設定する。
+    他のファイルからは以下のようにimportして使う：
+        from config.app_config import MODELS
+        model_name = MODELS.deep
+    """
+    def __init__(self):
+        self.router:     str = "gemini-2.5-flash"    # ルーター（質問分類）
+        self.fast:       str = "gemini-2.5-flash"    # 高速回答（スマートカード、V1エンジン）
+        self.deep:       str = "gemini-2.5-pro"      # 深い分析（チャット、ADKエンジン）
+        self.supplement: str = "gemini-2.5-flash"    # 補足フェーズ（思考ロジック等）
+
+    # 利用可能モデル一覧（Model Garden段階2で動的取得に切り替え予定）
+    AVAILABLE_MODELS = [
+        {"id": "gemini-2.5-flash", "name": "Gemini 2.5 Flash", "provider": "Google", "speed": "高速", "cost": "低"},
+        {"id": "gemini-2.5-pro", "name": "Gemini 2.5 Pro", "provider": "Google", "speed": "標準", "cost": "中"},
+        {"id": "claude-sonnet-4-6", "name": "Claude Sonnet 4.6", "provider": "Anthropic", "speed": "標準", "cost": "中"},
+        {"id": "claude-haiku-4-5", "name": "Claude Haiku 4.5", "provider": "Anthropic", "speed": "高速", "cost": "低"},
+    ]
+
+    def to_dict(self) -> dict:
+        return {
+            "router": self.router,
+            "fast": self.fast,
+            "deep": self.deep,
+            "supplement": self.supplement,
+        }
+
+
 # アプリ全体で使うシングルトンインスタンス
 # 他のファイルからは以下のようにimportして使う：
-#   from config.app_config import APP, PATHS
-APP   = AppConfig()
-PATHS = PathConfig()
+#   from config.app_config import APP, PATHS, MODELS
+APP    = AppConfig()
+PATHS  = PathConfig()
+MODELS = ModelConfig()
