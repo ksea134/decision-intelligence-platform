@@ -23,8 +23,17 @@ _gemini_client = None
 def _get_gemini_client():
     global _gemini_client
     if _gemini_client is None:
+        import os
         from google import genai
-        _gemini_client = genai.Client()
+        # Cloud Run: Vertex AI経由（ADC認証）、ローカル: APIキーまたはADC
+        if os.environ.get("K_SERVICE"):
+            _gemini_client = genai.Client(
+                vertexai=True,
+                project=os.environ.get("GCP_PROJECT_ID", "decision-support-ai"),
+                location=os.environ.get("GCP_REGION", "asia-northeast1"),
+            )
+        else:
+            _gemini_client = genai.Client()
     return _gemini_client
 
 
