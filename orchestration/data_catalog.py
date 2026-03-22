@@ -151,8 +151,20 @@ _TABLE_SELECT_TIMEOUT = 5
 def warmup_cache() -> None:
     """Data Catalogキャッシュを事前取得する。Cloud Run起動時に呼ぶ。"""
     try:
-        _get_tables_from_api("")  # 全データセット
-        logger.info("[DataCatalog] Cache warmup completed")
+        all_tables = _get_tables_from_api("")  # 全データセット
+        if all_tables:
+            # データセット別にもキャッシュを作成
+            datasets = set()
+            for t in all_tables:
+                parts = t["table"].split(".")
+                if len(parts) >= 2:
+                    datasets.add(parts[0])
+            for ds in datasets:
+                ds_tables = [t for t in all_tables if t["table"].startswith(f"{ds}.")]
+                cache_key = f"api:{ds}"
+                _api_cache[cache_key] = (time.time(), ds_tables)
+                logger.info("[DataCatalog] Cache warmup: %s → %d tables", ds, len(ds_tables))
+        logger.info("[DataCatalog] Cache warmup completed (%d datasets)", len(datasets) if all_tables else 0)
     except Exception as e:
         logger.warning("[DataCatalog] Cache warmup failed: %s", e)
 
