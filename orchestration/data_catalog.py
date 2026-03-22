@@ -145,7 +145,7 @@ def _get_tables_from_api(dataset_filter: str) -> list[dict[str, Any]]:
 last_api_call_count = 0
 
 # テーブル選択タイムアウト（秒）
-_TABLE_SELECT_TIMEOUT = 5
+_TABLE_SELECT_TIMEOUT = 3
 
 
 def warmup_cache() -> None:
@@ -186,6 +186,32 @@ def get_accessible_tables(user: str, dataset_filter: str = "") -> list[dict[str,
     return tables
 
 
+def _keyword_match_tables(question: str, tables: list[dict[str, Any]]) -> list[str]:
+    """キーワードマッチングでテーブルを高速選択する（LLM呼び出し不要）。"""
+    question_lower = question.lower()
+    scored = []
+    for t in tables:
+        score = 0
+        desc = (t.get("description", "") + " " + " ".join(t.get("tags", []))).lower()
+        table_name = t["table"].lower()
+        # テーブル名・説明・タグに質問のキーワードが含まれるかチェック
+        for word in question_lower.replace("？", "").replace("。", "").split():
+            if len(word) < 2:
+                continue
+            if word in desc:
+                score += 2
+            if word in table_name:
+                score += 1
+        if score > 0:
+            scored.append((score, t["table"]))
+
+    if not scored:
+        return []
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [t for _, t in scored[:MAX_SELECTED_TABLES]]
+
+
 def select_relevant_tables(
     question: str,
     accessible_tables: list[dict[str, Any]],
@@ -203,15 +229,17 @@ def select_relevant_tables(
         logger.info("[DataCatalog] Tables <= %d, returning all", MAX_SELECTED_TABLES)
         return [t["table"] for t in accessible_tables]
 
-    # AIエージェントにカタログメタデータを渡してテーブル選択（タイムアウト付き）
-    _select_start = time.time()
+    # AIエージェントにカタログメタデータを渡してテーブル選択
     try:
-        # タイムアウトチェック（get_accessible_tablesの時間を含む）
-        if time.time() - _select_start > _TABLE_SELECT_TIMEOUT:
-            logger.warning("[DataCatalog] Table select timeout (%.1fs > %ds), falling back to all",
-                          time.time() - _select_start, _TABLE_SELECT_TIMEOUT)
-            return [t["table"] for t in accessible_tables]
+        # まずキーワードマッチングで高速選択（C08準拠: コード側で処理）
+        keyword_selected = _keyword_match_tables(question, accessible_tables)
+        if keyword_selected:
+            logger.info("[DataCatalog] Keyword selected %d/%d tables: %s",
+                       len(keyword_selected), len(accessible_tables), keyword_selected)
+            return keyword_selected[:MAX_SELECTED_TABLES]
 
+        # キーワードマッチしない場合のみAI選択（フォールバック）
+        import os
         from orchestration.llm_client import generate_text
         from config.app_config import MODELS
 
