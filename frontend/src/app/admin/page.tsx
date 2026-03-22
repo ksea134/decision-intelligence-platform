@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminCatalog from "@/components/AdminCatalog";
 
 const TABS = [
@@ -12,6 +12,12 @@ const TABS = [
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("catalog");
+
+  useEffect(() => {
+    const link = document.querySelector("link[rel='icon']") as HTMLLinkElement;
+    if (link) link.href = "/favicon-admin.svg";
+    return () => { if (link) link.href = "/favicon.svg"; };
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#0A0E14] text-white">
