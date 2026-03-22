@@ -12,6 +12,7 @@ interface TraceData {
   pipeline?: { total_seconds: number; steps: { step: string; seconds: number; status: string; detail: string }[] };
   agent?: { engine: string; router_model: string; selected_agent: string; agent_model: string; agent_seconds: number };
   api_calls?: number;
+  quality_scores?: { citation_score: number; length_score: number; data_ref_score: number; coherence_score: number; overall_score: number };
   error?: { step: string; type: string; message: string } | null;
 }
 
@@ -85,7 +86,7 @@ export default function AdminQuality() {
   };
 
   const handleCsvDownload = () => {
-    const header = "時刻,種別,企業,ユーザー,合計(s),読込(s),検索(s),選択(s),BQ(s),Agent,生成(s),思考(s),図表(s),API回数,エンジン,状態,質問,チャート,データソース";
+    const header = "時刻,種別,企業,ユーザー,合計(s),読込(s),検索(s),選択(s),BQ(s),Agent,生成(s),思考(s),図表(s),API回数,品質スコア,出典,回答長,データ参照,一貫性,エンジン,状態,質問,チャート,データソース";
     const rows = traces.map((t) => {
       const ts = t._timestamp ? new Date(t._timestamp).toLocaleString("ja-JP") : "";
       const getStep = (name: string) => t.pipeline?.steps?.find((s) => s.step === name)?.seconds ?? "";
@@ -104,6 +105,11 @@ export default function AdminQuality() {
         getStep("thought_process"),
         getStep("infographic"),
         t.api_calls || "",
+        t.quality_scores?.overall_score ?? "",
+        t.quality_scores?.citation_score ?? "",
+        t.quality_scores?.length_score ?? "",
+        t.quality_scores?.data_ref_score ?? "",
+        t.quality_scores?.coherence_score ?? "",
         t.agent?.engine || "",
         t.what?.response_status || "",
         `"${(t.what?.question || "").replace(/"/g, '""')}"`,
@@ -197,6 +203,7 @@ export default function AdminQuality() {
               <th className="text-right py-2 px-2">思考</th>
               <th className="text-right py-2 px-2">図表</th>
               <th className="text-right py-2 px-2">API</th>
+              <th className="text-right py-2 px-2">品質</th>
               <th className="text-center py-2 px-2">状態</th>
             </tr>
           </thead>
@@ -231,6 +238,11 @@ export default function AdminQuality() {
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "thought_process")}</td>
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "infographic")}</td>
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{t.api_calls !== undefined && t.api_calls !== null ? t.api_calls : "-"}</td>
+                  <td className={`py-2 px-2 text-right font-mono ${
+                    (t.quality_scores?.overall_score ?? -1) >= 80 ? "text-green-400" :
+                    (t.quality_scores?.overall_score ?? -1) >= 50 ? "text-yellow-400" :
+                    (t.quality_scores?.overall_score ?? -1) >= 0 ? "text-red-400" : "text-gray-500"
+                  }`}>{t.quality_scores?.overall_score !== undefined && t.quality_scores.overall_score >= 0 ? t.quality_scores.overall_score : "-"}</td>
                   <td className="py-2 px-2 text-center">{isError ? "❌" : "✅"}</td>
                 </tr>
               );

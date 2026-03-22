@@ -8,6 +8,7 @@ interface TraceData {
   pipeline?: { total_seconds: number; steps: { step: string; seconds: number; status: string; detail: string }[] };
   agent?: { engine: string; router_model: string; selected_agent: string; agent_model: string; agent_seconds: number };
   api_calls?: number;
+  quality_scores?: { citation_score: number; length_score: number; data_ref_score: number; coherence_score: number; overall_score: number };
   error?: { step: string; type: string; message: string } | null;
 }
 
@@ -62,6 +63,19 @@ export default function AdminQualityDetail({ trace: t }: Props) {
         <div>
           <div className="text-gray-400 mb-1">参照データソース</div>
           <div className="text-gray-200">{t.what.sources_referenced.join(", ")}</div>
+        </div>
+      )}
+
+      {t.quality_scores && t.quality_scores.overall_score >= 0 && (
+        <div>
+          <div className="text-gray-400 mb-1">品質スコア</div>
+          <div className="flex gap-4">
+            <div><span className="text-gray-500">出典:</span> <span className="text-white">{t.quality_scores.citation_score}</span></div>
+            <div><span className="text-gray-500">回答長:</span> <span className="text-white">{t.quality_scores.length_score}</span></div>
+            <div><span className="text-gray-500">データ参照:</span> <span className="text-white">{t.quality_scores.data_ref_score}</span></div>
+            <div><span className="text-gray-500">一貫性:</span> <span className="text-white">{t.quality_scores.coherence_score >= 0 ? t.quality_scores.coherence_score : "-"}</span></div>
+            <div><span className="text-gray-500">総合:</span> <span className={`font-bold ${t.quality_scores.overall_score >= 80 ? "text-green-400" : t.quality_scores.overall_score >= 50 ? "text-yellow-400" : "text-red-400"}`}>{t.quality_scores.overall_score}</span></div>
+          </div>
         </div>
       )}
 

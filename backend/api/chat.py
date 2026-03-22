@@ -143,12 +143,29 @@ def _save_to_search(engine_info: dict, prompt: str, parsed, company: str, agent_
         pass
 
 
-def _finalize_trace(trace, parsed, segments: list) -> None:
-    """トレースにレスポンス情報を記録して出力する。"""
+def _finalize_trace(trace, parsed, segments: list, question: str = "") -> None:
+    """トレースにレスポンス情報+品質スコアを記録して出力する。"""
     trace.response_length = len(parsed.display_text)
     trace.sources_referenced = parsed.files
     chart_types = [s.get("chart_type", "") for s in segments if s.get("type") == "viz"]
     trace.charts = [c for c in chart_types if c]
+
+    # 品質評価（C09: 全リクエストで評価）
+    try:
+        from backend.ops.quality_evaluator import evaluate_response
+        from config.app_config import MODELS as _M
+        # V1エンジンはagent_modelが空なのでMODELS.fastを使用
+        model_id = trace.agent_model or _M.fast
+        trace.quality_scores = evaluate_response(
+            question=question,
+            answer=parsed.display_text,
+            sources=parsed.files,
+            model_id=model_id,
+        )
+    except Exception as e:
+        logger.warning("[QualityEval] Failed: %s", e)
+        trace.quality_scores = {"overall_score": -1}
+
     trace.emit()
 
 _executor = ThreadPoolExecutor(max_workers=4)
@@ -459,7 +476,7 @@ async def chat(request: ChatRequest, raw_request: Request = None) -> EventSource
                 user=_user_email,
             )
             record_response_time(elapsed, engine_type, request.company_display_name)
-            _finalize_trace(trace, parsed, segments)
+            _finalize_trace(trace, parsed, segments, question=request.question or "")
 
         except Exception as e:
             logger.error("[ERROR] /api/chat: %s", e, exc_info=True)

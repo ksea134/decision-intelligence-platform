@@ -50,6 +50,7 @@ class RequestTrace:
         self.sources_referenced: list[str] = []
 
         self.api_calls = 0
+        self.quality_scores: dict = {}
 
         self.error_step = ""
         self.error_type = ""
@@ -129,6 +130,7 @@ class RequestTrace:
                 "agent_seconds": self.agent_seconds,
             },
             "api_calls": self.api_calls,
+            "quality_scores": self.quality_scores,
             "error": {
                 "step": self.error_step,
                 "type": self.error_type,
