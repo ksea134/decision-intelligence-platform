@@ -476,7 +476,8 @@ async def chat(request: ChatRequest, raw_request: Request = None) -> EventSource
                 user=_user_email,
             )
             record_response_time(elapsed, engine_type, request.company_display_name)
-            _finalize_trace(trace, parsed, segments, question=request.question or "")
+            # 品質評価はGemini API呼び出しを含むため、バックグラウンドで実行（SSE接続を長引かせない）
+            _executor.submit(_finalize_trace, trace, parsed, segments, request.question or "")
 
         except Exception as e:
             logger.error("[ERROR] /api/chat: %s", e, exc_info=True)
