@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { API_BASE } from "@/lib/api";
 import AdminQualityDetail from "./AdminQualityDetail";
 
@@ -81,6 +81,9 @@ export default function AdminQuality() {
     const labels: Record<string, string> = {
       analysis_agent: "分析", comparison_agent: "比較",
       forecast_agent: "予測", general_agent: "汎用",
+      "要因分析エージェント": "分析", "比較分析エージェント": "比較",
+      "予測分析エージェント": "予測", "汎用回答エージェント": "汎用",
+      "ルーターエージェント": "ルータ",
     };
     return labels[agent] || agent || "-";
   };
@@ -198,12 +201,16 @@ export default function AdminQuality() {
               <th className="text-right py-2 px-2">検索</th>
               <th className="text-right py-2 px-2">選択</th>
               <th className="text-right py-2 px-2">BQ</th>
-              <th className="text-right py-2 px-2">Agent</th>
+              <th className="text-right py-2 px-2">Agt</th>
               <th className="text-right py-2 px-2">生成</th>
               <th className="text-right py-2 px-2">思考</th>
               <th className="text-right py-2 px-2">図表</th>
               <th className="text-right py-2 px-2">API</th>
-              <th className="text-right py-2 px-2">品質</th>
+              <th className="text-right py-2 px-2">出典</th>
+              <th className="text-right py-2 px-2">回答長</th>
+              <th className="text-right py-2 px-2">参照</th>
+              <th className="text-right py-2 px-2">一貫性</th>
+              <th className="text-right py-2 px-2">総合</th>
               <th className="text-center py-2 px-2">状態</th>
             </tr>
           </thead>
@@ -212,7 +219,7 @@ export default function AdminQuality() {
               const ts = t._timestamp ? new Date(t._timestamp).toLocaleString("ja-JP") : "";
               const total = t.pipeline?.total_seconds || 0;
               const isError = t.what?.response_status !== "success";
-              return (
+              return (<React.Fragment key={i}>
                 <tr key={i} onClick={() => setExpandedTrace(expandedTrace === i ? null : i)}
                   className={`border-b border-gray-800 cursor-pointer hover:bg-gray-800/50 transition-colors ${isError ? "bg-red-900/10" : ""}`}>
                   <td className="py-2 px-2 text-gray-500 whitespace-nowrap">{ts}</td>
@@ -238,23 +245,30 @@ export default function AdminQuality() {
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "thought_process")}</td>
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "infographic")}</td>
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{t.api_calls !== undefined && t.api_calls !== null ? t.api_calls : "-"}</td>
-                  <td className={`py-2 px-2 text-right font-mono ${
+                  <td className="py-2 px-2 text-right text-gray-500 font-mono">{t.quality_scores?.citation_score ?? "-"}</td>
+                  <td className="py-2 px-2 text-right text-gray-500 font-mono">{t.quality_scores?.length_score ?? "-"}</td>
+                  <td className="py-2 px-2 text-right text-gray-500 font-mono">{t.quality_scores?.data_ref_score ?? "-"}</td>
+                  <td className="py-2 px-2 text-right text-gray-500 font-mono">{(t.quality_scores?.coherence_score ?? -1) >= 0 ? t.quality_scores?.coherence_score : "-"}</td>
+                  <td className={`py-2 px-2 text-right font-bold ${
                     (t.quality_scores?.overall_score ?? -1) >= 80 ? "text-green-400" :
                     (t.quality_scores?.overall_score ?? -1) >= 50 ? "text-yellow-400" :
                     (t.quality_scores?.overall_score ?? -1) >= 0 ? "text-red-400" : "text-gray-500"
                   }`}>{t.quality_scores?.overall_score !== undefined && t.quality_scores.overall_score >= 0 ? t.quality_scores.overall_score : "-"}</td>
                   <td className="py-2 px-2 text-center">{isError ? "❌" : "✅"}</td>
                 </tr>
+                {expandedTrace === i && (
+                  <tr>
+                    <td colSpan={99} className="p-0">
+                      <AdminQualityDetail trace={t} />
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
               );
             })}
           </tbody>
         </table>
       </div>
-
-      {/* 展開: 詳細パネル */}
-      {expandedTrace !== null && traces[expandedTrace] && (
-        <AdminQualityDetail trace={traces[expandedTrace]} />
-      )}
 
       {/* もっと読み込む */}
       {hasMore && (
