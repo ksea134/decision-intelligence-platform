@@ -105,6 +105,13 @@ export default function Sidebar({ selectedCompany, onSelectCompany, onGcpConfigC
             </button>
             {devOpen && (
               <div className="space-y-2 mb-4">
+                <a
+                  href="/admin"
+                  target="_blank"
+                  className="text-xs text-white hover:text-[#FF462D] bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded block text-center transition-colors mb-2"
+                >
+                  管理画面を開く
+                </a>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-500">環境:</span>
                   <span className="text-xs text-green-400 font-bold">LOCAL</span>
