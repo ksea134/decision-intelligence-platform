@@ -192,6 +192,32 @@ AIの回答に対するユーザーフィードバックを収集し、回答品
 - 企業別・エージェント別の満足度分析 → モデル選択の最適化
 - Vertex AI Evaluationの評価基準の校正
 
+### BigQueryシンク（v5.9.1で設定）
+
+Cloud LoggingのDIPログを自動的にBigQueryに転送。
+
+| 設定 | 内容 |
+|------|------|
+| データセット | `decision-support-ai.dip_ops` |
+| シンク名 | `dip-bigquery-sink` |
+| フィルタ | Cloud Run `dip` サービスのログのみ |
+| 自動生成テーブル | `run_googleapis_com_stdout_YYYYMMDD`（日別） |
+
+### BigQueryビュー（整形済み）
+
+| ビュー名 | 内容 | 主なカラム |
+|---------|------|-----------|
+| `v_feedback` | 👍👎フィードバック | timestamp, rating, company, comment, question |
+| `v_request_logs` | リクエストログ | timestamp, question, company, engine, elapsed_seconds |
+| `v_errors` | エラーログ | timestamp, severity, error_message |
+
+### Looker Studio ダッシュボード
+
+BigQueryの `v_feedback` ビューに接続したLooker Studioレポートを作成済み。
+- 👍👎比率（円グラフ）
+- フィードバック一覧（表）
+- URL: Looker Studio（https://lookerstudio.google.com）から閲覧
+
 ---
 
 ## 8. リクエストログ（監査証跡）
