@@ -294,7 +294,22 @@ class ReasoningEngine:
                 logger.warning("[Phase1] テーブルが見つかりません")
                 return ""
 
-            # 全テーブルからデータを取得してCSVに結合（30秒タイムアウト）
+            # データカタログ経由でテーブルを絞り込み（段階1: ローカルJSON版）
+            try:
+                from orchestration.data_catalog import get_accessible_tables, select_relevant_tables
+                dataset_name = tables[0][0] if tables else ""
+                accessible = get_accessible_tables("default", dataset_name)
+                if accessible:
+                    selected = select_relevant_tables(user_prompt, accessible)
+                    if selected:
+                        # 選択されたテーブルだけに絞り込み
+                        selected_set = set(selected)
+                        tables = [(d, t) for d, t in tables if f"{d}.{t}" in selected_set]
+                        logger.info("[Phase1] カタログ選択: %d テーブル → %s", len(tables), [f"{d}.{t}" for d, t in tables])
+            except Exception as e:
+                logger.warning("[Phase1] カタログ選択エラー、全テーブルにフォールバック: %s", e)
+
+            # 選択テーブルからデータを取得してCSVに結合（30秒タイムアウト）
             import time as _time
             _bq_start = _time.time()
             _BQ_TIMEOUT = 30

@@ -1,0 +1,99 @@
+{
+  "_comment": "Dataplex Data Catalogのローカル版。段階2でDataplex APIに差し替え予定。",
+  "tables": {
+    "demo_factory02.production_results": {
+      "description": "生産実績。日別・ライン別・シフト別の計画数量・実績数量・サイクルタイム",
+      "tags": ["生産", "製造", "実績", "ライン", "生産性", "計画", "シフト", "サイクルタイム"],
+      "quality_score": 0.95
+    },
+    "demo_factory02.production_orders": {
+      "description": "製造オーダー。顧客別受注情報、納期、進捗状況",
+      "tags": ["受注", "オーダー", "納期", "顧客", "進捗"],
+      "quality_score": 0.90
+    },
+    "demo_factory02.quality_inspections": {
+      "description": "品質検査結果。ライン別ロット検査、合格数・不良タイプ",
+      "tags": ["品質", "検査", "不良", "合格", "ロット"],
+      "quality_score": 0.92
+    },
+    "demo_factory02.defect_records": {
+      "description": "不良記録。不良タイプ・根本原因・発生工程の詳細",
+      "tags": ["不良", "欠陥", "原因", "工程", "品質"],
+      "quality_score": 0.88
+    },
+    "demo_factory02.incident_records": {
+      "description": "インシデント・事故記録。安全パトロール指摘事項、重大度、負傷有無",
+      "tags": ["安全", "パトロール", "指摘", "事故", "インシデント", "負傷"],
+      "quality_score": 0.90
+    },
+    "demo_factory02.equipment_status": {
+      "description": "設備稼働状況。リアルタイムの稼働率・状態",
+      "tags": ["設備", "稼働", "稼働率", "状態", "ライン"],
+      "quality_score": 0.93
+    },
+    "demo_factory02.equipment_alerts": {
+      "description": "設備アラート。異常検知、重大度分類、アラートメッセージ",
+      "tags": ["設備", "アラート", "異常", "故障", "警告"],
+      "quality_score": 0.91
+    },
+    "demo_factory02.maintenance_history": {
+      "description": "メンテナンス履歴。故障日・修理日・ダウンタイム・故障モード",
+      "tags": ["メンテナンス", "修理", "故障", "ダウンタイム", "保全"],
+      "quality_score": 0.89
+    },
+    "demo_factory02.maintenance_schedule": {
+      "description": "メンテナンス計画。予定日・種別・実施状況",
+      "tags": ["メンテナンス", "計画", "予定", "保全"],
+      "quality_score": 0.87
+    },
+    "demo_factory02.energy_consumption": {
+      "description": "エネルギー消費量。設備別の電力使用量とベースライン比較",
+      "tags": ["エネルギー", "電力", "消費", "省エネ", "コスト"],
+      "quality_score": 0.94
+    },
+    "demo_factory02.environment_sensors": {
+      "description": "環境センサー。温度・湿度・騒音レベルのリアルタイム計測",
+      "tags": ["環境", "温度", "湿度", "騒音", "センサー"],
+      "quality_score": 0.96
+    },
+    "demo_factory02.certification_status": {
+      "description": "従業員資格状況。資格種別・取得日・有効期限",
+      "tags": ["資格", "従業員", "認定", "有効期限", "人事"],
+      "quality_score": 0.85
+    },
+    "demo_factory.equipment_maintenance_history": {
+      "description": "設備メンテナンス履歴（デモ01）。作業日・設備ID・作業内容",
+      "tags": ["メンテナンス", "修理", "設備", "作業"],
+      "quality_score": 0.88
+    },
+    "demo_factory.iot_press_vibration_temp_log": {
+      "description": "IoTセンサーログ（デモ01）。振動・温度・電流のリアルタイムデータ",
+      "tags": ["IoT", "振動", "温度", "電流", "センサー"],
+      "quality_score": 0.93
+    },
+    "demo_factory.mes_a3_line_operation": {
+      "description": "MES生産ライン稼働（デモ01）。稼働率・生産数・ダウンタイム",
+      "tags": ["生産", "ライン", "稼働率", "MES"],
+      "quality_score": 0.91
+    },
+    "demo_factory.production_shipment_order_schedule": {
+      "description": "出荷スケジュール（デモ01）。出荷日・顧客・数量・優先度",
+      "tags": ["出荷", "スケジュール", "納期", "顧客", "オーダー"],
+      "quality_score": 0.90
+    },
+    "7andi_audit.hr_management_system": {
+      "description": "人事管理データ。従業員定着率・残業時間・店長在任期間・アラートフラグ",
+      "tags": ["人事", "従業員", "残業", "定着率", "店長"],
+      "quality_score": 0.86
+    },
+    "7andi_audit.internal_reporting_portal": {
+      "description": "内部通報ポータル。通報案件・カテゴリ・ステータス・弁護士関与フラグ",
+      "tags": ["通報", "内部告発", "コンプライアンス", "監査", "弁護士"],
+      "quality_score": 0.84
+    }
+  },
+  "permissions": {
+    "_comment": "段階1は全ユーザー全テーブルアクセス可能。段階3でDataplex Governanceに差し替え",
+    "default": ["*"]
+  }
+}

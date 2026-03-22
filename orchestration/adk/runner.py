@@ -77,6 +77,7 @@ class ADKReasoningEngine:
             search_client=self._search_client,
             data_ctx=data_ctx,
             company=company,
+            user_prompt=user_prompt,
         )
 
         # 過去事例検索（ADK実行前に必ず実行 — LLMの判断に任せない）

@@ -26,17 +26,19 @@ _data_agent = None
 _search_client = None
 _data_ctx = None
 _company = None
+_user_prompt = ""
 _last_search_result_count = 0
 _last_bq_tables: list[str] = []
 
 
-def set_tool_context(data_agent, search_client, data_ctx, company: str) -> None:
+def set_tool_context(data_agent, search_client, data_ctx, company: str, user_prompt: str = "") -> None:
     """ツールが参照するコンテキストを設定する。各リクエストの開始時に呼ぶ。"""
-    global _data_agent, _search_client, _data_ctx, _company
+    global _data_agent, _search_client, _data_ctx, _company, _user_prompt
     _data_agent = data_agent
     _search_client = search_client
     _data_ctx = data_ctx
     _company = company
+    _user_prompt = user_prompt
 
 
 def query_bigquery() -> str:
@@ -68,6 +70,20 @@ def query_bigquery() -> str:
         tables = re.findall(r"Dataset:\s*(\S+)[\s\S]*?Table:\s*(\S+)", schema_text)
         if not tables:
             return "Error: No tables found in schema."
+
+        # データカタログ経由でテーブルを絞り込み
+        try:
+            from orchestration.data_catalog import get_accessible_tables, select_relevant_tables
+            dataset_name = tables[0][0] if tables else ""
+            accessible = get_accessible_tables("default", dataset_name)
+            if accessible and _user_prompt:
+                selected = select_relevant_tables(_user_prompt, accessible)
+                if selected:
+                    selected_set = set(selected)
+                    tables = [(d, t) for d, t in tables if f"{d}.{t}" in selected_set]
+                    logger.info("[ADK Tool] カタログ選択: %d テーブル → %s", len(tables), [f"{d}.{t}" for d, t in tables])
+        except Exception as e:
+            logger.warning("[ADK Tool] カタログ選択エラー、全テーブルにフォールバック: %s", e)
 
         all_parts = []
         for dataset, table in tables:
