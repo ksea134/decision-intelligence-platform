@@ -56,20 +56,26 @@ class RequestTrace:
         self.error_message = ""
 
     def begin_step(self, step_name: str):
-        """ステップの計測を開始する。"""
-        self._step_start = time.time()
-        self._current_step_name = step_name
+        """ステップの計測を開始する。トレースエラーで本体処理を止めない。"""
+        try:
+            self._step_start = time.time()
+            self._current_step_name = step_name
+        except Exception:
+            pass
 
     def end_step(self, detail: str = "", status: str = "ok"):
-        """ステップの計測を終了し記録する。"""
-        elapsed = round(time.time() - self._step_start, 2) if self._step_start else 0
-        self.steps.append(TraceStep(
-            step=getattr(self, "_current_step_name", "unknown"),
-            seconds=elapsed,
-            status=status,
-            detail=detail,
-        ))
-        self._step_start = 0
+        """ステップの計測を終了し記録する。トレースエラーで本体処理を止めない。"""
+        try:
+            elapsed = round(time.time() - self._step_start, 2) if self._step_start else 0
+            self.steps.append(TraceStep(
+                step=getattr(self, "_current_step_name", "unknown"),
+                seconds=elapsed,
+                status=status,
+                detail=detail,
+            ))
+            self._step_start = 0
+        except Exception:
+            pass
 
     def record_error(self, step: str, error: Exception):
         """エラーを記録する。"""
