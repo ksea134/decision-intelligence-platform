@@ -201,7 +201,7 @@ export default function AdminQuality() {
               <th className="text-right py-2 px-2">検索</th>
               <th className="text-right py-2 px-2">選択</th>
               <th className="text-right py-2 px-2">BQ</th>
-              <th className="text-right py-2 px-2">Agt</th>
+              <th className="text-right py-2 px-2 min-w-[3rem]">Agt</th>
               <th className="text-right py-2 px-2">生成</th>
               <th className="text-right py-2 px-2">思考</th>
               <th className="text-right py-2 px-2">図表</th>
