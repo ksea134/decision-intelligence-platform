@@ -210,13 +210,15 @@ class ADKReasoningEngine:
             if "エージェント" in fs.get("step", "") and "ルート" not in fs.get("step", ""):
                 _selected_agent = fs.get("step", "")
                 break
-        if trace: trace.end_step(f"model={MODELS.deep}, agent={_selected_agent}")
-        if trace and _selected_agent:
-            trace.set_agent(selected_agent=_selected_agent, agent_model=MODELS.deep, router_model=MODELS.router)
-        # ADKのAPI呼び出し回数をtraceに記録
-        if trace:
-            from orchestration.adk import tools as _t
-            trace.api_calls += getattr(_t, "_last_api_calls", 0)
+        try:
+            if trace: trace.end_step(f"model={MODELS.deep}, agent={_selected_agent}")
+            if trace and _selected_agent:
+                trace.set_agent(selected_agent=_selected_agent, agent_model=MODELS.deep, router_model=MODELS.router)
+            if trace:
+                from orchestration.adk import tools as _t
+                trace.api_calls += getattr(_t, "_last_api_calls", 0)
+        except Exception:
+            pass
 
         flow_steps.append({"step": "回答生成", "done": True, "detail": MODELS.deep})
         yield {"flow_steps": list(flow_steps)}
