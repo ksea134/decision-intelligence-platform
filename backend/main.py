@@ -67,6 +67,15 @@ app.include_router(feedback_router)
 app.include_router(catalog_router)
 app.include_router(quality_router)
 
+# Data Catalogキャッシュのウォームアップ（初回リクエストの遅延防止）
+@app.on_event("startup")
+async def _warmup():
+    try:
+        from orchestration.data_catalog import warmup_cache
+        warmup_cache()
+    except Exception:
+        pass  # ウォームアップ失敗はアプリ起動を止めない
+
 # 静的ファイル配信（Next.js静的エクスポート）
 static_dir = Path(__file__).parent.parent / "static"
 if static_dir.exists():

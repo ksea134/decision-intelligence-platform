@@ -144,6 +144,18 @@ def _get_tables_from_api(dataset_filter: str) -> list[dict[str, Any]]:
 
 last_api_call_count = 0
 
+# テーブル選択タイムアウト（秒）
+_TABLE_SELECT_TIMEOUT = 5
+
+
+def warmup_cache() -> None:
+    """Data Catalogキャッシュを事前取得する。Cloud Run起動時に呼ぶ。"""
+    try:
+        _get_tables_from_api("")  # 全データセット
+        logger.info("[DataCatalog] Cache warmup completed")
+    except Exception as e:
+        logger.warning("[DataCatalog] Cache warmup failed: %s", e)
+
 def get_accessible_tables(user: str, dataset_filter: str = "") -> list[dict[str, Any]]:
     """ユーザーがアクセス可能なテーブル一覧とメタデータを返す。
 
@@ -179,8 +191,15 @@ def select_relevant_tables(
         logger.info("[DataCatalog] Tables <= %d, returning all", MAX_SELECTED_TABLES)
         return [t["table"] for t in accessible_tables]
 
-    # AIエージェントにカタログメタデータを渡してテーブル選択
+    # AIエージェントにカタログメタデータを渡してテーブル選択（タイムアウト付き）
+    _select_start = time.time()
     try:
+        # タイムアウトチェック（get_accessible_tablesの時間を含む）
+        if time.time() - _select_start > _TABLE_SELECT_TIMEOUT:
+            logger.warning("[DataCatalog] Table select timeout (%.1fs > %ds), falling back to all",
+                          time.time() - _select_start, _TABLE_SELECT_TIMEOUT)
+            return [t["table"] for t in accessible_tables]
+
         from orchestration.llm_client import generate_text
         from config.app_config import MODELS
 
