@@ -10,6 +10,7 @@ interface TraceData {
   what?: { question: string; response_length: number; response_status: string; charts: string[]; sources_referenced: string[] };
   pipeline?: { total_seconds: number; steps: { step: string; seconds: number; status: string; detail: string }[] };
   agent?: { engine: string; router_model: string; selected_agent: string; agent_model: string; agent_seconds: number };
+  api_calls?: number;
   error?: { step: string; type: string; message: string } | null;
 }
 
