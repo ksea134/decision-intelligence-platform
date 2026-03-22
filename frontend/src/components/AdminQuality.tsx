@@ -208,7 +208,11 @@ export default function AdminQuality() {
                   <td className="py-2 px-2">
                     {t.agent?.engine === "supplement"
                       ? <span className="text-[10px] text-purple-400 bg-purple-900/20 px-1.5 py-0.5 rounded">補足</span>
-                      : <span className="text-[10px] text-blue-400 bg-blue-900/20 px-1.5 py-0.5 rounded">本文</span>
+                      : t.agent?.engine === "v1"
+                        ? <span className="text-[10px] text-green-400 bg-green-900/20 px-1.5 py-0.5 rounded">V1</span>
+                        : t.agent?.engine === "adk"
+                          ? <span className="text-[10px] text-blue-400 bg-blue-900/20 px-1.5 py-0.5 rounded">ADK</span>
+                          : <span className="text-[10px] text-gray-400 bg-gray-900/20 px-1.5 py-0.5 rounded">-</span>
                     }
                   </td>
                   <td className="py-2 px-2 text-gray-300 truncate max-w-[120px]">{t.who?.company || ""}</td>
