@@ -83,12 +83,13 @@ export default function AdminQuality() {
   };
 
   const handleCsvDownload = () => {
-    const header = "時刻,企業,ユーザー,エンジン,Agent,合計(s),読込(s),検索(s),選択(s),BQ(s),生成(s),補足(s),状態,質問,チャート,データソース";
+    const header = "時刻,種別,企業,ユーザー,エンジン,Agent,合計(s),読込(s),検索(s),選択(s),BQ(s),生成(s),補足(s),状態,質問,チャート,データソース";
     const rows = traces.map((t) => {
       const ts = t._timestamp ? new Date(t._timestamp).toLocaleString("ja-JP") : "";
       const getStep = (name: string) => t.pipeline?.steps?.find((s) => s.step === name)?.seconds ?? "";
       return [
         ts,
+        t.agent?.engine === "supplement" ? "補足" : "本文",
         t.who?.company || "",
         t.who?.user || "",
         t.agent?.engine || "",
@@ -179,6 +180,7 @@ export default function AdminQuality() {
           <thead>
             <tr className="text-gray-400 border-b border-gray-700">
               <th className="text-left py-2 px-2">時刻</th>
+              <th className="text-left py-2 px-2">種別</th>
               <th className="text-left py-2 px-2">企業</th>
               <th className="text-left py-2 px-2">ユーザー</th>
               <th className="text-right py-2 px-2">合計</th>
@@ -201,6 +203,12 @@ export default function AdminQuality() {
                 <tr key={i} onClick={() => setExpandedTrace(expandedTrace === i ? null : i)}
                   className={`border-b border-gray-800 cursor-pointer hover:bg-gray-800/50 transition-colors ${isError ? "bg-red-900/10" : ""}`}>
                   <td className="py-2 px-2 text-gray-500 whitespace-nowrap">{ts}</td>
+                  <td className="py-2 px-2">
+                    {t.agent?.engine === "supplement"
+                      ? <span className="text-[10px] text-purple-400 bg-purple-900/20 px-1.5 py-0.5 rounded">補足</span>
+                      : <span className="text-[10px] text-blue-400 bg-blue-900/20 px-1.5 py-0.5 rounded">本文</span>
+                    }
+                  </td>
                   <td className="py-2 px-2 text-gray-300 truncate max-w-[120px]">{t.who?.company || ""}</td>
                   <td className="py-2 px-2 text-gray-500 truncate max-w-[100px]">{t.who?.user || ""}</td>
                   <td className={`py-2 px-2 text-right font-mono ${total > 30 ? "text-red-400" : total > 15 ? "text-yellow-400" : "text-blue-400"}`}>{total}s</td>
