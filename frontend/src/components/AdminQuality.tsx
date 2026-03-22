@@ -83,7 +83,7 @@ export default function AdminQuality() {
   };
 
   const handleCsvDownload = () => {
-    const header = "時刻,種別,企業,ユーザー,エンジン,Agent,合計(s),読込(s),検索(s),選択(s),BQ(s),生成(s),思考(s),図表(s),状態,質問,チャート,データソース";
+    const header = "時刻,種別,企業,ユーザー,合計(s),読込(s),検索(s),選択(s),BQ(s),Agent,生成(s),思考(s),図表(s),エンジン,状態,質問,チャート,データソース";
     const rows = traces.map((t) => {
       const ts = t._timestamp ? new Date(t._timestamp).toLocaleString("ja-JP") : "";
       const getStep = (name: string) => t.pipeline?.steps?.find((s) => s.step === name)?.seconds ?? "";
@@ -92,16 +92,16 @@ export default function AdminQuality() {
         t.agent?.engine === "supplement" ? "補足" : "本文",
         t.who?.company || "",
         t.who?.user || "",
-        t.agent?.engine || "",
-        t.agent?.selected_agent || "",
         t.pipeline?.total_seconds || "",
         getStep("data_load"),
         getStep("past_qa_search"),
         getStep("table_select"),
         getStep("bq_fetch"),
+        t.agent?.selected_agent || "",
         getStep("llm_generate"),
         getStep("thought_process"),
         getStep("infographic"),
+        t.agent?.engine || "",
         t.what?.response_status || "",
         `"${(t.what?.question || "").replace(/"/g, '""')}"`,
         (t.what?.charts || []).join(";"),
@@ -189,10 +189,10 @@ export default function AdminQuality() {
               <th className="text-right py-2 px-2">検索</th>
               <th className="text-right py-2 px-2">選択</th>
               <th className="text-right py-2 px-2">BQ</th>
+              <th className="text-left py-2 px-2">Agent</th>
               <th className="text-right py-2 px-2">生成</th>
               <th className="text-right py-2 px-2">思考</th>
               <th className="text-right py-2 px-2">図表</th>
-              <th className="text-left py-2 px-2">Agent</th>
               <th className="text-center py-2 px-2">状態</th>
             </tr>
           </thead>
@@ -218,10 +218,10 @@ export default function AdminQuality() {
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "past_qa_search")}</td>
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "table_select")}</td>
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "bq_fetch")}</td>
+                  <td className="py-2 px-2 text-gray-400">{getAgentLabel(t)}</td>
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "llm_generate")}</td>
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "thought_process")}</td>
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "infographic")}</td>
-                  <td className="py-2 px-2 text-gray-400">{getAgentLabel(t)}</td>
                   <td className="py-2 px-2 text-center">{isError ? "❌" : "✅"}</td>
                 </tr>
               );
