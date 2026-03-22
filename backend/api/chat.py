@@ -300,8 +300,13 @@ async def chat(request: ChatRequest) -> EventSourceResponse:
             segments = parse_viz_segments(viz_text)
 
             # --- Mermaidフローチャート自動生成（C08: コード側で変換） ---
-            from domain.step_to_mermaid import maybe_generate_mermaid_segments, inject_all_mermaids_into_segments
-            mermaid_segs = maybe_generate_mermaid_segments(request.question or "", parsed.display_text)
+            # ステップ検出用テキスト: display_textにA〜Mリストがない場合はfull_textから検出
+            from domain.step_to_mermaid import maybe_generate_mermaid_segments, inject_all_mermaids_into_segments, detect_steps
+            _detect_text = parsed.display_text
+            if len(detect_steps(parsed.display_text)) < 3 and len(detect_steps(full_text)) >= 3:
+                _detect_text = full_text
+                logger.info("[Mermaid] display_textにステップ不足、full_textから検出")
+            mermaid_segs = maybe_generate_mermaid_segments(request.question or "", _detect_text)
             if mermaid_segs:
                 segments = inject_all_mermaids_into_segments(segments, mermaid_segs)
 

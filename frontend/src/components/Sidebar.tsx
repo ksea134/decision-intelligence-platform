@@ -200,7 +200,7 @@ export default function Sidebar({ selectedCompany, onSelectCompany, onGcpConfigC
           <span>powered by</span>
           <img src="/Kyndryl_logo.png" alt="Kyndryl" className="h-5 inline" />
           <span className="opacity-50">|</span>
-          <span>v5.10.0</span>
+          <span>v5.11.0</span>
         </div>
       </aside>
       )}
