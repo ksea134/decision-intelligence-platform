@@ -78,10 +78,10 @@ def _get_tables_from_api(dataset_filter: str) -> list[dict[str, Any]]:
     now = time.time()
 
     # キャッシュ確認
+    global last_api_call_count
     if cache_key in _api_cache:
         cached_time, cached_data = _api_cache[cache_key]
         if now - cached_time < _CACHE_TTL:
-            global last_api_call_count
             last_api_call_count = 0
             logger.info("[DataCatalog] API cache hit: %s (%d tables, 0 API calls)", dataset_filter, len(cached_data))
             return cached_data
@@ -129,7 +129,6 @@ def _get_tables_from_api(dataset_filter: str) -> list[dict[str, Any]]:
 
         # キャッシュに保存
         _api_cache[cache_key] = (now, result)
-        global last_api_call_count
         last_api_call_count = _api_call_count
         logger.info("[DataCatalog] API fetched: %s → %d tables (%d API calls)", dataset_filter, len(result), _api_call_count)
         return result

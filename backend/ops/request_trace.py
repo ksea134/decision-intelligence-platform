@@ -63,12 +63,12 @@ class RequestTrace:
         except Exception:
             pass
 
-    def end_step(self, detail: str = "", status: str = "ok"):
+    def end_step(self, detail: str = "", status: str = "ok", step_name: str = ""):
         """ステップの計測を終了し記録する。トレースエラーで本体処理を止めない。"""
         try:
             elapsed = round(time.time() - self._step_start, 2) if self._step_start else 0
             self.steps.append(TraceStep(
-                step=getattr(self, "_current_step_name", "unknown"),
+                step=step_name or getattr(self, "_current_step_name", "unknown"),
                 seconds=elapsed,
                 status=status,
                 detail=detail,

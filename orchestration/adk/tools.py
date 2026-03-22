@@ -30,16 +30,18 @@ _user_prompt = ""
 _last_search_result_count = 0
 _last_bq_tables: list[str] = []
 _last_api_calls: int = 0
+_trace = None
 
 
-def set_tool_context(data_agent, search_client, data_ctx, company: str, user_prompt: str = "") -> None:
+def set_tool_context(data_agent, search_client, data_ctx, company: str, user_prompt: str = "", trace=None) -> None:
     """ツールが参照するコンテキストを設定する。各リクエストの開始時に呼ぶ。"""
-    global _data_agent, _search_client, _data_ctx, _company, _user_prompt
+    global _data_agent, _search_client, _data_ctx, _company, _user_prompt, _trace
     _data_agent = data_agent
     _search_client = search_client
     _data_ctx = data_ctx
     _company = company
     _user_prompt = user_prompt
+    _trace = trace
 
 
 def query_bigquery() -> str:
@@ -75,7 +77,8 @@ def query_bigquery() -> str:
 
         # データカタログ経由でテーブルを絞り込み
         try:
-            from orchestration.data_catalog import get_accessible_tables, select_relevant_tables
+            if _trace: _trace.begin_step("table_select")
+            from orchestration.data_catalog import get_accessible_tables, select_relevant_tables, last_api_call_count
             dataset_name = tables[0][0] if tables else ""
             accessible = get_accessible_tables("default", dataset_name)
             if accessible and _user_prompt:
@@ -84,11 +87,14 @@ def query_bigquery() -> str:
                     selected_set = set(selected)
                     tables = [(d, t) for d, t in tables if f"{d}.{t}" in selected_set]
                     logger.info("[ADK Tool] カタログ選択: %d テーブル → %s", len(tables), [f"{d}.{t}" for d, t in tables])
-            from orchestration.data_catalog import last_api_call_count
-            _last_api_calls = last_api_call_count + 1  # +1 for LLM selection
+            _last_api_calls = last_api_call_count + 1
+            if _trace: _trace.end_step(f"{len(tables)}テーブル選択, {_last_api_calls} API calls")
         except Exception as e:
             logger.warning("[ADK Tool] カタログ選択エラー、全テーブルにフォールバック: %s", e)
+            if _trace: _trace.end_step(f"フォールバック: {e}", status="warn")
 
+        # BQデータ取得
+        if _trace: _trace.begin_step("bq_fetch")
         all_parts = []
         for dataset, table in tables:
             if _time.time() - _start > _BQ_TIMEOUT_SEC:
@@ -107,8 +113,10 @@ def query_bigquery() -> str:
                 logger.error("[ADK Tool] %s.%s 取得エラー: %s", dataset, table, e)
 
         if not all_parts:
+            if _trace: _trace.end_step("データなし")
             return "Error: Could not retrieve any data."
 
+        if _trace: _trace.end_step(f"{len(all_parts)}テーブル取得")
         return "\n\n".join(all_parts)
     except Exception as e:
         logger.error("[ADK Tool] query_bigquery error: %s", e)

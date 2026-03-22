@@ -295,17 +295,18 @@ async def chat(request: ChatRequest, raw_request: Request = None) -> EventSource
                     yield {"event": "error", "data": json.dumps({"message": payload})}
                     return
 
-            # flow_stepsからエージェント情報を抽出
-            agent_type = out_data.get("agent_type", "general")
-            flow_steps = out_data.get("flow_steps", [])
-            for fs in flow_steps:
-                if "エージェント" in fs.get("step", "") and fs.get("detail"):
-                    trace.set_agent(
-                        selected_agent=agent_type,
-                        agent_model=fs["detail"],
-                        router_model=out_data.get("router_model", ""),
-                    )
-                    break
+            # flow_stepsからエージェント情報を抽出（runner.pyで未設定の場合のみ）
+            if not trace.selected_agent:
+                agent_type = out_data.get("agent_type", "general")
+                flow_steps = out_data.get("flow_steps", [])
+                for fs in flow_steps:
+                    if "エージェント" in fs.get("step", "") and fs.get("detail"):
+                        trace.set_agent(
+                            selected_agent=agent_type,
+                            agent_model=fs["detail"],
+                            router_model=out_data.get("router_model", ""),
+                        )
+                        break
 
             # --- 全文結合 + tool_codeフィルタ（フェンス付き・なし両対応） ---
             full_text = "".join(chunks)

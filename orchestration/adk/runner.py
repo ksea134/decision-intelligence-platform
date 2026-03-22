@@ -79,6 +79,7 @@ class ADKReasoningEngine:
             data_ctx=data_ctx,
             company=company,
             user_prompt=user_prompt,
+            trace=trace,
         )
 
         # 過去事例検索（ADK実行前に必ず実行 — LLMの判断に任せない）
@@ -211,7 +212,7 @@ class ADKReasoningEngine:
                 _selected_agent = fs.get("step", "")
                 break
         try:
-            if trace: trace.end_step(f"model={MODELS.deep}, agent={_selected_agent}")
+            if trace: trace.end_step(f"model={MODELS.deep}, agent={_selected_agent}", step_name="llm_generate")
             if trace and _selected_agent:
                 trace.set_agent(selected_agent=_selected_agent, agent_model=MODELS.deep, router_model=MODELS.router)
             if trace:
