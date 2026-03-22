@@ -189,7 +189,7 @@ export default function AdminQuality() {
               <th className="text-right py-2 px-2">検索</th>
               <th className="text-right py-2 px-2">選択</th>
               <th className="text-right py-2 px-2">BQ</th>
-              <th className="text-left py-2 px-2">Agent</th>
+              <th className="text-center py-2 px-2">Agent</th>
               <th className="text-right py-2 px-2">生成</th>
               <th className="text-right py-2 px-2">思考</th>
               <th className="text-right py-2 px-2">図表</th>
@@ -218,7 +218,7 @@ export default function AdminQuality() {
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "past_qa_search")}</td>
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "table_select")}</td>
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "bq_fetch")}</td>
-                  <td className="py-2 px-2 text-gray-400">{getAgentLabel(t)}</td>
+                  <td className="py-2 px-2 text-gray-400 text-center">{getAgentLabel(t)}</td>
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "llm_generate")}</td>
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "thought_process")}</td>
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "infographic")}</td>
