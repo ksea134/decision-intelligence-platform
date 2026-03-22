@@ -110,6 +110,9 @@ export default function AdminCatalog() {
 
   return (
     <div>
+      <div className="text-xs text-gray-400 mb-4">
+        ⚠ 初回起動時、メッセージが表示されるまでお待ちください。
+      </div>
       {/* サマリー */}
       <div className="flex gap-6 mb-6">
         <div className="bg-gray-800 rounded-lg px-4 py-3">

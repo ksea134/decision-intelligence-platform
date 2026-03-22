@@ -43,3 +43,41 @@ async def post_feedback(req: FeedbackRequest):
         },
     )
     return {"status": "ok", "message": "フィードバックを記録しました"}
+
+
+@router.get("/feedback/list")
+async def list_feedback():
+    """BigQueryからフィードバック一覧を取得する。管理画面用。"""
+    try:
+        from google.cloud import bigquery
+        bq_client = bigquery.Client(project="decision-support-ai")
+
+        query = """
+        SELECT
+            timestamp,
+            REGEXP_EXTRACT(jsonPayload.message, r"rating=(\\w+)") AS rating,
+            REGEXP_EXTRACT(jsonPayload.message, r"company=([^,]+)") AS company,
+            REGEXP_EXTRACT(jsonPayload.message, r"comment=([^,]*)") AS comment,
+            REGEXP_EXTRACT(jsonPayload.message, r"question=(.+)$") AS question
+        FROM `decision-support-ai.dip_ops.run_googleapis_com_stdout_*`
+        WHERE jsonPayload.message LIKE "%[Feedback]%"
+        ORDER BY timestamp DESC
+        LIMIT 100
+        """
+        results = bq_client.query(query).result()
+
+        feedback_list = []
+        for row in results:
+            feedback_list.append({
+                "timestamp": row.timestamp.isoformat() if row.timestamp else "",
+                "rating": row.rating or "",
+                "company": row.company or "",
+                "comment": row.comment or "",
+                "question": row.question or "",
+            })
+
+        return {"feedback": feedback_list}
+
+    except Exception as e:
+        logger.warning("[Feedback] List failed: %s", e)
+        return {"feedback": [], "error": str(e)}

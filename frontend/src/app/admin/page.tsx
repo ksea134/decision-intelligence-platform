@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import AdminCatalog from "@/components/AdminCatalog";
+import AdminAgents from "@/components/AdminAgents";
+import AdminFeedback from "@/components/AdminFeedback";
 
 const TABS = [
   { id: "catalog", label: "データカタログ", ready: true },
-  { id: "agents", label: "エージェント", ready: false },
-  { id: "feedback", label: "フィードバック", ready: false },
+  { id: "agents", label: "エージェント", ready: true },
+  { id: "feedback", label: "フィードバック", ready: true },
   { id: "permissions", label: "権限", ready: false },
 ];
 
@@ -62,12 +64,8 @@ export default function AdminPage() {
       {/* コンテンツ */}
       <div className="px-6 py-6 max-w-6xl mx-auto">
         {activeTab === "catalog" && <AdminCatalog />}
-        {activeTab === "agents" && (
-          <div className="text-gray-500 text-sm">エージェント管理は段階2で実装予定です。</div>
-        )}
-        {activeTab === "feedback" && (
-          <div className="text-gray-500 text-sm">フィードバック分析は段階3で実装予定です。</div>
-        )}
+        {activeTab === "agents" && <AdminAgents />}
+        {activeTab === "feedback" && <AdminFeedback />}
         {activeTab === "permissions" && (
           <div className="text-gray-500 text-sm">権限管理は段階4で実装予定です。</div>
         )}
