@@ -82,6 +82,39 @@ export default function AdminQuality() {
     return labels[agent] || agent || "-";
   };
 
+  const handleCsvDownload = () => {
+    const header = "時刻,企業,ユーザー,エンジン,Agent,合計(s),読込(s),検索(s),選択(s),BQ(s),生成(s),状態,質問,チャート,データソース";
+    const rows = traces.map((t) => {
+      const ts = t._timestamp ? new Date(t._timestamp).toLocaleString("ja-JP") : "";
+      const getStep = (name: string) => t.pipeline?.steps?.find((s) => s.step === name)?.seconds ?? "";
+      return [
+        ts,
+        t.who?.company || "",
+        t.who?.user || "",
+        t.agent?.engine || "",
+        t.agent?.selected_agent || "",
+        t.pipeline?.total_seconds || "",
+        getStep("data_load"),
+        getStep("past_qa_search"),
+        getStep("table_select"),
+        getStep("bq_fetch"),
+        getStep("llm_generate"),
+        t.what?.response_status || "",
+        `"${(t.what?.question || "").replace(/"/g, '""')}"`,
+        (t.what?.charts || []).join(";"),
+        (t.what?.sources_referenced || []).join(";"),
+      ].join(",");
+    });
+    const csv = "\uFEFF" + header + "\n" + rows.join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    const now = new Date();
+    a.download = `dip_quality_log_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
   if (loading && traces.length === 0) return <div className="text-gray-400 text-sm">品質データを読み込み中...</div>;
 
   return (
@@ -131,6 +164,12 @@ export default function AdminQuality() {
           <option value="">全ユーザー</option>
           {users.map((u) => <option key={u} value={u}>{u}</option>)}
         </select>
+        <button
+          onClick={handleCsvDownload}
+          className="text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded transition-colors ml-auto"
+        >
+          CSVダウンロード
+        </button>
       </div>
 
       {/* ログテーブル */}
