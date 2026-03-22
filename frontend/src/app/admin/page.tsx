@@ -4,16 +4,18 @@ import { useState, useEffect } from "react";
 import AdminCatalog from "@/components/AdminCatalog";
 import AdminAgents from "@/components/AdminAgents";
 import AdminFeedback from "@/components/AdminFeedback";
+import AdminQuality from "@/components/AdminQuality";
 
 const TABS = [
-  { id: "catalog", label: "データカタログ", ready: true },
-  { id: "agents", label: "エージェント", ready: true },
+  { id: "quality", label: "AI品質管理", ready: true },
+  { id: "agents", label: "AIエージェント", ready: true },
   { id: "feedback", label: "フィードバック", ready: true },
+  { id: "catalog", label: "データカタログ", ready: true },
   { id: "permissions", label: "権限", ready: false },
 ];
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState("catalog");
+  const [activeTab, setActiveTab] = useState("quality");
 
   useEffect(() => {
     const link = document.querySelector("link[rel='icon']") as HTMLLinkElement;
@@ -66,6 +68,7 @@ export default function AdminPage() {
         {activeTab === "catalog" && <AdminCatalog />}
         {activeTab === "agents" && <AdminAgents />}
         {activeTab === "feedback" && <AdminFeedback />}
+        {activeTab === "quality" && <AdminQuality />}
         {activeTab === "permissions" && (
           <div className="text-gray-500 text-sm">権限管理は段階4で実装予定です。</div>
         )}
