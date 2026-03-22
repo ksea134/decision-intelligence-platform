@@ -55,6 +55,7 @@ def _get_gcp_services() -> list[dict]:
         {"name": "Cloud Logging", "status": "active", "purpose": "ログ収集"},
         {"name": "Cloud Trace", "status": "active", "purpose": "処理トレース"},
         {"name": "Cloud Monitoring", "status": "active", "purpose": "メトリクス・アラート"},
+        {"name": "Looker Studio", "status": "active", "purpose": "フィードバック分析"},
         {"name": "Google ADK", "status": "active", "purpose": "エージェント基盤"},
         # 将来利用予定
         {"name": "Model Garden", "status": "planned", "purpose": "マルチモデル切替"},
