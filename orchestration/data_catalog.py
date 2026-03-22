@@ -113,26 +113,10 @@ def _get_tables_from_api(dataset_filter: str) -> list[dict[str, Any]]:
             else:
                 table_id = fqn
 
-            # 詳細（スキーマ）を取得
-            columns = []
+            # search_catalogの結果からdescriptionを取得（lookup_entryは呼ばない = 高速）
             description = search_result.description or ""
-            try:
-                request = datacatalog_v1.LookupEntryRequest(
-                    linked_resource=search_result.linked_resource
-                )
-                entry = client.lookup_entry(request=request)
-                _api_call_count += 1  # lookup_entry
-                description = entry.description or ""
-                if entry.schema and entry.schema.columns:
-                    columns = [
-                        {"name": col.column, "type": col.type_, "description": col.description or ""}
-                        for col in entry.schema.columns
-                    ]
-            except Exception as e:
-                logger.warning("[DataCatalog] Failed to get schema for %s: %s", table_id, e)
-
-            # カラム名からタグを自動生成（descriptionが未設定の場合の補完）
-            auto_tags = [col["name"] for col in columns]
+            columns = []
+            auto_tags = []
 
             result.append({
                 "table": table_id,
