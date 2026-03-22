@@ -34,6 +34,123 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["chat"])
 
+
+# ============================================================
+# ヘルパー関数（event_generatorから抽出）
+# ============================================================
+
+def _extract_agent_info(trace, out_data: dict, is_smart_card: bool) -> None:
+    """flow_stepsからエージェント情報をtraceに記録する。"""
+    if trace.selected_agent:
+        return  # runner.pyで設定済み
+
+    agent_type = out_data.get("agent_type", "general")
+    flow_steps = out_data.get("flow_steps", [])
+    for fs in flow_steps:
+        if "エージェント" in fs.get("step", "") and fs.get("detail"):
+            trace.set_agent(
+                selected_agent=agent_type,
+                agent_model=fs["detail"],
+                router_model=out_data.get("router_model", ""),
+            )
+            return
+
+    # ADKエンジンでagentが未設定の場合はデフォルト設定
+    if not is_smart_card:
+        from config.app_config import MODELS as _M
+        trace.set_agent(
+            selected_agent="汎用回答エージェント",
+            agent_model=_M.fast,
+            router_model=_M.router,
+        )
+
+
+def _clean_full_text(full_text: str) -> str:
+    """tool_codeブロックおよびADKのprint(query_bigquery(...))パターンを除去する。"""
+    if "tool_code" in full_text:
+        full_text = re.sub(r"```tool_code.*?```", "", full_text, flags=re.DOTALL)
+        full_text = re.sub(r"(?m)^tool_code\s*\n(?:print\(.*?\)\n?)*", "", full_text)
+    # ADKのprint(query_bigquery(sql=...))パターン
+    full_text = re.sub(r"print\(query_bigquery\(sql=.*?\)\)", "", full_text, flags=re.DOTALL)
+    # SELECT文の断片（行頭のAS, FROM, WHERE, GROUP BY等）
+    full_text = re.sub(r"(?m)^(?:AS|FROM|WHERE|GROUP BY|ORDER BY|SELECT|SUM\(|LIMIT)\b[^\n]*\n?", "", full_text)
+    return full_text.strip()
+
+
+def _build_segments(parsed, full_text: str, question: str) -> list:
+    """InlineViz + Mermaidセグメントを構築する。"""
+    from domain.viz_parser import parse_viz_segments
+    from domain.step_to_mermaid import maybe_generate_mermaid_segments, inject_all_mermaids_into_segments, detect_steps
+
+    # 全角波括弧を補正してvizパース
+    viz_text = parsed.display_text.replace("｛", "{").replace("｝", "}")
+    segments = parse_viz_segments(viz_text)
+
+    # Mermaidフローチャート自動生成（C08: コード側で変換）
+    _detect_text = parsed.display_text
+    if len(detect_steps(parsed.display_text)) < 3 and len(detect_steps(full_text)) >= 3:
+        _detect_text = full_text
+        logger.info("[Mermaid] display_textにステップ不足、full_textから検出")
+    mermaid_segs = maybe_generate_mermaid_segments(question or "", _detect_text)
+    if mermaid_segs:
+        segments = inject_all_mermaids_into_segments(segments, mermaid_segs)
+
+    return segments
+
+
+def _extract_sql_info(out_data: dict) -> tuple[str, int]:
+    """SQL実行情報を抽出する。"""
+    sql_query = out_data.get("executed_sql") or ""
+    sql_row_count = 0
+    if out_data.get("sql_result"):
+        try:
+            sr = out_data["sql_result"]
+            sql_row_count = sr.row_count if hasattr(sr, "row_count") else sr.get("row_count", 0)
+        except Exception:
+            pass
+    return sql_query, sql_row_count
+
+
+def _save_to_memory(memory, prompt: str, parsed, out_data: dict, is_smart_card: bool, smart_card_id: str = "") -> None:
+    """会話履歴をSessionMemoryに保存する。"""
+    display = smart_card_id if is_smart_card else prompt
+    user_msg = {"role": "user", "content": display, "llm_prompt": prompt}
+    asst_msg = {
+        "role": "assistant",
+        "content": parsed.display_text,
+        "files": parsed.files,
+        "sql_result": out_data.get("sql_result"),
+        "sql_query": out_data.get("executed_sql") or parsed.sql or "",
+        "flow_steps": out_data.get("flow_steps", []),
+    }
+    memory.add_message(user_msg)
+    memory.add_message(asst_msg)
+    memory.sync()
+
+
+def _save_to_search(engine_info: dict, prompt: str, parsed, company: str, agent_type: str) -> None:
+    """Vertex AI SearchにQ&Aを保存する。"""
+    try:
+        search_client = engine_info.get("search_client")
+        if search_client and search_client.is_ready() and parsed.display_text:
+            search_client.store(
+                question=prompt,
+                answer=parsed.display_text[:2000],
+                company=company,
+                intent=agent_type,
+            )
+    except Exception:
+        pass
+
+
+def _finalize_trace(trace, parsed, segments: list) -> None:
+    """トレースにレスポンス情報を記録して出力する。"""
+    trace.response_length = len(parsed.display_text)
+    trace.sources_referenced = parsed.files
+    chart_types = [s.get("chart_type", "") for s in segments if s.get("type") == "viz"]
+    trace.charts = [c for c in chart_types if c]
+    trace.emit()
+
 _executor = ThreadPoolExecutor(max_workers=4)
 
 # ── B4: セッション永続化（企業名→SessionMemory） ──
@@ -295,68 +412,25 @@ async def chat(request: ChatRequest, raw_request: Request = None) -> EventSource
                     yield {"event": "error", "data": json.dumps({"message": payload})}
                     return
 
-            # flow_stepsからエージェント情報を抽出（runner.pyで未設定の場合のみ）
-            if not trace.selected_agent:
-                agent_type = out_data.get("agent_type", "general")
-                flow_steps = out_data.get("flow_steps", [])
-                for fs in flow_steps:
-                    if "エージェント" in fs.get("step", "") and fs.get("detail"):
-                        trace.set_agent(
-                            selected_agent=agent_type,
-                            agent_model=fs["detail"],
-                            router_model=out_data.get("router_model", ""),
-                        )
-                        break
-                # ADKエンジンでagentが未設定の場合はデフォルト設定
-                if not trace.selected_agent and not is_smart_card:
-                    from config.app_config import MODELS as _M
-                    trace.set_agent(
-                        selected_agent="汎用回答エージェント",
-                        agent_model=_M.fast,
-                        router_model=_M.router,
-                    )
+            # --- エージェント情報抽出 ---
+            _extract_agent_info(trace, out_data, is_smart_card)
 
-            # --- 全文結合 + tool_codeフィルタ（フェンス付き・なし両対応） ---
-            full_text = "".join(chunks)
-            if "tool_code" in full_text:
-                full_text = re.sub(r"```tool_code.*?```", "", full_text, flags=re.DOTALL)
-                full_text = re.sub(r"(?m)^tool_code\s*\n(?:print\(.*?\)\n?)*", "", full_text)
-                full_text = full_text.strip()
-
+            # --- 全文結合 + パース ---
+            full_text = _clean_full_text("".join(chunks))
             if not full_text:
                 yield {"event": "error", "data": json.dumps({"message": "AIからの応答が空でした"})}
                 return
 
-            # --- 出典情報（米印方式: LLM自己申告のみ、コード側補完なし） ---
             from domain.response_parser import parse_llm_response
             parsed = parse_llm_response(full_text)
 
-            # --- InlineVizセグメント分割 ---
-            # ADKテンプレート回避で全角波括弧にした影響で、Geminiが全角で出力するケースを補正
-            viz_text = parsed.display_text.replace("｛", "{").replace("｝", "}")
-            from domain.viz_parser import parse_viz_segments
-            segments = parse_viz_segments(viz_text)
+            # --- セグメント構築（InlineViz + Mermaid） ---
+            segments = _build_segments(parsed, full_text, request.question or "")
 
-            # --- Mermaidフローチャート自動生成（C08: コード側で変換） ---
-            # ステップ検出用テキスト: display_textにA〜Mリストがない場合はfull_textから検出
-            from domain.step_to_mermaid import maybe_generate_mermaid_segments, inject_all_mermaids_into_segments, detect_steps
-            _detect_text = parsed.display_text
-            if len(detect_steps(parsed.display_text)) < 3 and len(detect_steps(full_text)) >= 3:
-                _detect_text = full_text
-                logger.info("[Mermaid] display_textにステップ不足、full_textから検出")
-            mermaid_segs = maybe_generate_mermaid_segments(request.question or "", _detect_text)
-            if mermaid_segs:
-                segments = inject_all_mermaids_into_segments(segments, mermaid_segs)
-
-            # SQL実行ログ情報
-            sql_query = out_data.get("executed_sql") or parsed.sql or ""
-            sql_row_count = 0
-            if out_data.get("sql_result"):
-                try:
-                    sql_row_count = out_data["sql_result"].row_count if hasattr(out_data["sql_result"], "row_count") else out_data["sql_result"].get("row_count", 0)
-                except Exception:
-                    pass
-
+            # --- SSE done イベント送信 ---
+            sql_query, sql_row_count = _extract_sql_info(out_data)
+            if not sql_query:
+                sql_query = parsed.sql or ""
             elapsed = round(time.time() - start_ts, 1)
             yield {
                 "event": "done",
@@ -369,35 +443,10 @@ async def chat(request: ChatRequest, raw_request: Request = None) -> EventSource
                 }),
             }
 
-            # ── B4: メッセージをメモリに保存（会話履歴引き継ぎ） ──
-            display = f"{request.smart_card_id}" if is_smart_card else request.question
-            user_msg = {"role": "user", "content": display, "llm_prompt": prompt}
-            asst_msg = {
-                "role": "assistant",
-                "content": parsed.display_text,
-                "files": parsed.files,
-                "sql_result": out_data.get("sql_result"),
-                "sql_query": out_data.get("executed_sql") or parsed.sql or "",
-                "flow_steps": out_data.get("flow_steps", []),
-            }
-            memory.add_message(user_msg)
-            memory.add_message(asst_msg)
-            memory.sync()
+            # --- 後処理（メモリ・検索・ログ・トレース） ---
+            _save_to_memory(memory, prompt, parsed, out_data, is_smart_card, request.smart_card_id or "")
+            _save_to_search(engine_info, prompt, parsed, request.company_display_name, out_data.get("agent_type", "general"))
 
-            # ── B3: Vertex AI Search Q&A自動保存 ──
-            try:
-                search_client = engine_info.get("search_client")
-                if search_client and search_client.is_ready() and parsed.display_text:
-                    search_client.store(
-                        question=prompt,
-                        answer=parsed.display_text[:2000],
-                        company=request.company_display_name,
-                        intent=out_data.get("agent_type", "general"),
-                    )
-            except Exception:
-                pass  # 保存失敗はチャット動作に影響させない
-
-            # リクエストログ記録
             engine_type = "v1" if is_smart_card else "adk"
             log_request(
                 question=request.question or request.smart_card_id or "",
@@ -409,16 +458,8 @@ async def chat(request: ChatRequest, raw_request: Request = None) -> EventSource
                 files_count=len(parsed.files),
                 user=_user_email,
             )
-            # メトリクス記録（応答時間）
             record_response_time(elapsed, engine_type, request.company_display_name)
-
-            # 構造化トレース出力（C09）
-            trace.response_length = len(parsed.display_text)
-            trace.sources_referenced = parsed.files
-            # チャート種別を記録
-            chart_types = [s.get("chart_type", "") for s in segments if s.get("type") == "viz"]
-            trace.charts = [c for c in chart_types if c]
-            trace.emit()
+            _finalize_trace(trace, parsed, segments)
 
         except Exception as e:
             logger.error("[ERROR] /api/chat: %s", e, exc_info=True)

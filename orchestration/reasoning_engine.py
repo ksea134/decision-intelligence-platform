@@ -176,30 +176,11 @@ class ReasoningEngine:
         # ── Phase 0: 質問理解 + 過去事例検索 ──
         flow_steps.append({"step": "質問理解", "done": True, "detail": MODELS.fast})
 
-        past_qa_context = ""
-        if trace: trace.begin_step("past_qa_search")
-        if self._search_client and self._search_client.is_ready():
-            try:
-                logger.warning("[Search] Searching past Q&A: query='%s', company='%s'", user_prompt[:50], company)
-                similar_qas = self._search_client.search(query=user_prompt, company=company, top_k=3)
-                if similar_qas:
-                    parts = []
-                    for i, qa in enumerate(similar_qas, 1):
-                        parts.append(f"事例{i}:\n  質問: {qa.get('question', '')}\n  回答: {qa.get('answer', '')}")
-                    past_qa_context = "\n\n".join(parts)
-                    flow_steps.append({"step": "過去事例検索", "done": True, "detail": f"{len(similar_qas)}件の類似事例を発見"})
-                    if trace: trace.end_step(f"{len(similar_qas)}件の類似事例")
-                    logger.info("[Search] %d similar Q&As found", len(similar_qas))
-                else:
-                    flow_steps.append({"step": "過去事例検索", "done": True, "detail": "類似事例なし"})
-                    if trace: trace.end_step("類似事例なし")
-            except Exception as e:
-                logger.warning("[Search] Failed: %s", e)
-                flow_steps.append({"step": "過去事例検索", "done": True, "detail": "検索スキップ"})
-                if trace: trace.end_step(f"エラー: {e}", status="error")
-        else:
-            flow_steps.append({"step": "過去事例検索", "done": True, "detail": "未接続"})
-            if trace: trace.end_step("未接続")
+        from orchestration.search_helper import search_past_qa
+        past_qa_context, search_detail, _ = search_past_qa(
+            self._search_client, user_prompt, company, trace=trace,
+        )
+        flow_steps.append({"step": "過去事例検索", "done": True, "detail": search_detail})
 
         # ── Phase 0.5: Router分類 ──
         intent = None
