@@ -81,13 +81,14 @@ def _get_tables_from_api(dataset_filter: str) -> list[dict[str, Any]]:
     if cache_key in _api_cache:
         cached_time, cached_data = _api_cache[cache_key]
         if now - cached_time < _CACHE_TTL:
-            logger.info("[DataCatalog] API cache hit: %s (%d tables)", dataset_filter, len(cached_data))
+            logger.info("[DataCatalog] API cache hit: %s (%d tables, 0 API calls)", dataset_filter, len(cached_data))
             return cached_data
 
     try:
         from google.cloud import datacatalog_v1
 
         client = datacatalog_v1.DataCatalogClient()
+        _api_call_count = 0
 
         # データセット内の全テーブルを検索
         scope = datacatalog_v1.types.SearchCatalogRequest.Scope()
@@ -98,6 +99,7 @@ def _get_tables_from_api(dataset_filter: str) -> list[dict[str, Any]]:
             query += f" parent:{dataset_filter}"
 
         search_results = client.search_catalog(scope=scope, query=query)
+        _api_call_count += 1  # search_catalog
 
         result = []
         for search_result in search_results:
@@ -117,6 +119,7 @@ def _get_tables_from_api(dataset_filter: str) -> list[dict[str, Any]]:
                     linked_resource=search_result.linked_resource
                 )
                 entry = client.lookup_entry(request=request)
+                _api_call_count += 1  # lookup_entry
                 description = entry.description or ""
                 if entry.schema and entry.schema.columns:
                     columns = [
@@ -140,7 +143,7 @@ def _get_tables_from_api(dataset_filter: str) -> list[dict[str, Any]]:
 
         # キャッシュに保存
         _api_cache[cache_key] = (now, result)
-        logger.info("[DataCatalog] API fetched: %s → %d tables", dataset_filter, len(result))
+        logger.info("[DataCatalog] API fetched: %s → %d tables (%d API calls)", dataset_filter, len(result), _api_call_count)
         return result
 
     except Exception as e:
@@ -229,7 +232,7 @@ def select_relevant_tables(
                 selected.append(name)
 
         if selected:
-            logger.info("[DataCatalog] AI selected %d/%d tables: %s",
+            logger.info("[DataCatalog] AI selected %d/%d tables (1 LLM call): %s",
                        len(selected), len(accessible_tables), selected)
             return selected[:MAX_SELECTED_TABLES]
 

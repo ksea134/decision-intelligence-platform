@@ -319,7 +319,7 @@ class ReasoningEngine:
                 logger.warning("[Phase1] カタログ選択エラー、全テーブルにフォールバック: %s", e)
                 if trace: trace.end_step(f"フォールバック: {e}", status="warn")
             else:
-                if trace: trace.end_step(f"{len(tables)}テーブル選択")
+                if trace: trace.end_step(f"{len(tables)}テーブル選択, {len(accessible)}テーブル中")
 
             # 選択テーブルからデータを取得してCSVに結合（30秒タイムアウト）
             if trace: trace.begin_step("bq_fetch")
