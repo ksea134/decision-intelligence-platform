@@ -83,7 +83,7 @@ export default function AdminQuality() {
   };
 
   const handleCsvDownload = () => {
-    const header = "時刻,種別,企業,ユーザー,合計(s),読込(s),検索(s),選択(s),BQ(s),Agent,生成(s),思考(s),図表(s),エンジン,状態,質問,チャート,データソース";
+    const header = "時刻,種別,企業,ユーザー,合計(s),読込(s),検索(s),選択(s),BQ(s),Agent,生成(s),思考(s),図表(s),API回数,エンジン,状態,質問,チャート,データソース";
     const rows = traces.map((t) => {
       const ts = t._timestamp ? new Date(t._timestamp).toLocaleString("ja-JP") : "";
       const getStep = (name: string) => t.pipeline?.steps?.find((s) => s.step === name)?.seconds ?? "";
@@ -101,6 +101,7 @@ export default function AdminQuality() {
         getStep("llm_generate"),
         getStep("thought_process"),
         getStep("infographic"),
+        t.api_calls || "",
         t.agent?.engine || "",
         t.what?.response_status || "",
         `"${(t.what?.question || "").replace(/"/g, '""')}"`,
@@ -193,6 +194,7 @@ export default function AdminQuality() {
               <th className="text-right py-2 px-2">生成</th>
               <th className="text-right py-2 px-2">思考</th>
               <th className="text-right py-2 px-2">図表</th>
+              <th className="text-right py-2 px-2">API</th>
               <th className="text-center py-2 px-2">状態</th>
             </tr>
           </thead>
@@ -226,6 +228,7 @@ export default function AdminQuality() {
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "llm_generate")}</td>
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "thought_process")}</td>
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "infographic")}</td>
+                  <td className="py-2 px-2 text-right text-gray-500 font-mono">{t.api_calls || "-"}</td>
                   <td className="py-2 px-2 text-center">{isError ? "❌" : "✅"}</td>
                 </tr>
               );

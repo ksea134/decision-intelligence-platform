@@ -319,7 +319,11 @@ class ReasoningEngine:
                 logger.warning("[Phase1] カタログ選択エラー、全テーブルにフォールバック: %s", e)
                 if trace: trace.end_step(f"フォールバック: {e}", status="warn")
             else:
-                if trace: trace.end_step(f"{len(tables)}テーブル選択, {len(accessible)}テーブル中")
+                from orchestration.data_catalog import last_api_call_count
+                api_calls = last_api_call_count + 1  # +1 for LLM selection call
+                if trace:
+                    trace.api_calls += api_calls
+                    trace.end_step(f"{len(tables)}テーブル選択, {len(accessible)}中, {api_calls} API calls")
 
             # 選択テーブルからデータを取得してCSVに結合（30秒タイムアウト）
             if trace: trace.begin_step("bq_fetch")

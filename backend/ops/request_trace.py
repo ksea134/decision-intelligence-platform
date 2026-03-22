@@ -49,6 +49,8 @@ class RequestTrace:
         self.charts: list[str] = []
         self.sources_referenced: list[str] = []
 
+        self.api_calls = 0
+
         self.error_step = ""
         self.error_type = ""
         self.error_message = ""
@@ -114,6 +116,7 @@ class RequestTrace:
                 "agent_model": self.agent_model,
                 "agent_seconds": self.agent_seconds,
             },
+            "api_calls": self.api_calls,
             "error": {
                 "step": self.error_step,
                 "type": self.error_type,
