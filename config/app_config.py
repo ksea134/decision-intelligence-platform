@@ -44,7 +44,7 @@ class AppConfig:
         knowledge_preview_len:前提知識のプレビュー表示文字数。
         error_msg_limit:      エラーメッセージの文字数上限。
     """
-    version:               str = "ver.5.11.0"
+    version:               str = "ver.5.12.0"
     title:                 str = "意思決定支援AI"
     gemini_model:          str = "gemini-2.5-flash"
     companies_csv_path:    str = "data/companies.csv"
