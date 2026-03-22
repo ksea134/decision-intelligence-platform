@@ -307,6 +307,14 @@ async def chat(request: ChatRequest, raw_request: Request = None) -> EventSource
                             router_model=out_data.get("router_model", ""),
                         )
                         break
+                # ADKエンジンでagentが未設定の場合はデフォルト設定
+                if not trace.selected_agent and not is_smart_card:
+                    from config.app_config import MODELS as _M
+                    trace.set_agent(
+                        selected_agent="汎用回答エージェント",
+                        agent_model=_M.fast,
+                        router_model=_M.router,
+                    )
 
             # --- 全文結合 + tool_codeフィルタ（フェンス付き・なし両対応） ---
             full_text = "".join(chunks)
