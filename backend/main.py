@@ -70,4 +70,14 @@ app.include_router(quality_router)
 # 静的ファイル配信（Next.js静的エクスポート）
 static_dir = Path(__file__).parent.parent / "static"
 if static_dir.exists():
+    from fastapi.responses import FileResponse
+
+    # /admin → admin.html（Next.jsの静的エクスポートがadmin.htmlを生成するため）
+    @app.get("/admin")
+    async def admin_page():
+        admin_html = static_dir / "admin.html"
+        if admin_html.exists():
+            return FileResponse(str(admin_html))
+        return FileResponse(str(static_dir / "index.html"))
+
     app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
