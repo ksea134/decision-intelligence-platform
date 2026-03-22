@@ -78,18 +78,24 @@ class RequestTrace:
             pass
 
     def record_error(self, step: str, error: Exception):
-        """エラーを記録する。"""
-        self.error_step = step
-        self.error_type = type(error).__name__
-        self.error_message = str(error)[:500]
-        self.response_status = "error"
+        """エラーを記録する。トレースエラーで本体処理を止めない。"""
+        try:
+            self.error_step = step
+            self.error_type = type(error).__name__
+            self.error_message = str(error)[:500]
+            self.response_status = "error"
+        except Exception:
+            pass
 
     def set_agent(self, selected_agent: str, agent_model: str, router_model: str = "", agent_seconds: float = 0):
-        """エージェント情報を記録する。"""
-        self.selected_agent = selected_agent
-        self.agent_model = agent_model
-        self.router_model = router_model
-        self.agent_seconds = agent_seconds
+        """エージェント情報を記録する。トレースエラーで本体処理を止めない。"""
+        try:
+            self.selected_agent = selected_agent
+            self.agent_model = agent_model
+            self.router_model = router_model
+            self.agent_seconds = agent_seconds
+        except Exception:
+            pass
 
     def to_dict(self) -> dict[str, Any]:
         """構造化JSONに変換する。"""
@@ -131,6 +137,9 @@ class RequestTrace:
         }
 
     def emit(self):
-        """構造化トレースをログに出力する。"""
-        trace_dict = self.to_dict()
-        logger.info("[RequestTrace] %s", json.dumps(trace_dict, ensure_ascii=False))
+        """構造化トレースをログに出力する。トレースエラーで本体処理を止めない。"""
+        try:
+            trace_dict = self.to_dict()
+            logger.info("[RequestTrace] %s", json.dumps(trace_dict, ensure_ascii=False))
+        except Exception:
+            pass
