@@ -78,7 +78,7 @@ export default function RightColumn({ folderName, projectId, gcsBucket, flowStep
 
       {/* プロンプト */}
       <SectionLabel label="プロンプト" />
-      <Expander title={`前提知識（${assets.knowledge_files.length}件）`}>
+      <Expander title={`知識・経験・ガイドライン（${assets.knowledge_files.length}件）`}>
         {assets.knowledge_text ? (
           <div className="right-column-md">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>

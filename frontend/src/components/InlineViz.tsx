@@ -118,7 +118,7 @@ function _buildCartesianOption(
               },
             }
           : undefined,
-        smooth: chartType === "line",
+        smooth: false,
         symbol: chartType === "line" ? "circle" : undefined,
         symbolSize: chartType === "line" ? 6 : undefined,
         animationDuration: 800,
