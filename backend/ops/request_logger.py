@@ -24,6 +24,7 @@ def log_request(
     files_count: int,
     status: str = "success",
     error_message: str = "",
+    user: str = "",
 ) -> None:
     """
     チャットリクエストの詳細をログに記録する。
@@ -39,11 +40,12 @@ def log_request(
     }
 
     logger.info(
-        "chat_request | company=%s | source=%s | engine=%s | "
+        "chat_request | company=%s | source=%s | engine=%s | user=%s | "
         "elapsed=%.1fs | response=%d chars | files=%d | status=%s%s",
         company,
         source,
         engine,
+        user or "unknown",
         elapsed_seconds,
         response_length,
         files_count,

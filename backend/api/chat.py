@@ -20,7 +20,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, AsyncGenerator
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
@@ -128,6 +128,7 @@ def _run_engine(
     memory: Any,
     queue: asyncio.Queue,
     loop: asyncio.AbstractEventLoop,
+    trace: Any = None,
 ) -> None:
     """同期エンジンをスレッドで実行し、結果をasyncio.Queueに送信する。"""
     try:
@@ -166,6 +167,7 @@ def _run_engine(
             company=company,
             cfg=cfg,
             data_ctx=data_ctx,
+            trace=trace,
         )
 
         for token in stream:
@@ -183,14 +185,27 @@ def _run_engine(
 
 
 @router.post("/api/chat")
-async def chat(request: ChatRequest) -> EventSourceResponse:
+async def chat(request: ChatRequest, raw_request: Request = None) -> EventSourceResponse:
     """質問を受け取り、SSEで回答をストリーミング返却する。"""
+    # IAPヘッダーからユーザーを取得（ローカルでは"local-dev"）
+    _user_email = ""
+    if raw_request:
+        iap_email = raw_request.headers.get("X-Goog-Authenticated-User-Email", "")
+        _user_email = iap_email.split(":")[-1] if ":" in iap_email else (iap_email or "local-dev")
 
     async def event_generator() -> AsyncGenerator[dict, None]:
         start_ts = time.time()
+        from backend.ops.request_trace import RequestTrace
+        trace = RequestTrace(
+            question=request.question or request.smart_card_id or "",
+            company=request.company_display_name,
+            user=_user_email,
+            source=request.source,
+        )
 
         try:
             # --- データ読み込み ---
+            trace.begin_step("data_load")
             base_dir = os.path.join("data", request.company_folder_name)
             cfg = CloudConfig(
                 project_id=request.project_id,
@@ -230,6 +245,8 @@ async def chat(request: ChatRequest) -> EventSourceResponse:
 
             # ── B1: データソースフィルタリング（Streamlit版準拠） ──
             filtered_ctx = _filter_data_ctx(data_ctx, data_source) if is_smart_card else data_ctx
+            trace.end_step(f"BQ: {len(data_ctx.bq_result.content) if data_ctx.bq_result else 0} chars, GCS: {len(data_ctx.gcs_result.content) if data_ctx.gcs_result else 0} chars")
+            trace.engine = "v1" if is_smart_card else "adk"
 
             # ── B4: 共有SessionMemory ──
             memory = _get_memory(request.company_display_name)
@@ -239,7 +256,7 @@ async def chat(request: ChatRequest) -> EventSourceResponse:
 
             _executor.submit(
                 _run_engine, prompt, request.company_display_name,
-                cfg, filtered_ctx, is_smart_card, memory, queue, loop,
+                cfg, filtered_ctx, is_smart_card, memory, queue, loop, trace,
             )
 
             # --- キューからトークンを受信してSSEに変換 ---
@@ -277,6 +294,18 @@ async def chat(request: ChatRequest) -> EventSourceResponse:
                 elif kind == "error":
                     yield {"event": "error", "data": json.dumps({"message": payload})}
                     return
+
+            # flow_stepsからエージェント情報を抽出
+            agent_type = out_data.get("agent_type", "general")
+            flow_steps = out_data.get("flow_steps", [])
+            for fs in flow_steps:
+                if "エージェント" in fs.get("step", "") and fs.get("detail"):
+                    trace.set_agent(
+                        selected_agent=agent_type,
+                        agent_model=fs["detail"],
+                        router_model=out_data.get("router_model", ""),
+                    )
+                    break
 
             # --- 全文結合 + tool_codeフィルタ（フェンス付き・なし両対応） ---
             full_text = "".join(chunks)
@@ -369,9 +398,18 @@ async def chat(request: ChatRequest) -> EventSourceResponse:
                 elapsed_seconds=elapsed,
                 response_length=len(parsed.display_text),
                 files_count=len(parsed.files),
+                user=_user_email,
             )
             # メトリクス記録（応答時間）
             record_response_time(elapsed, engine_type, request.company_display_name)
+
+            # 構造化トレース出力（C09）
+            trace.response_length = len(parsed.display_text)
+            trace.sources_referenced = parsed.files
+            # チャート種別を記録
+            chart_types = [s.get("chart_type", "") for s in segments if s.get("type") == "viz"]
+            trace.charts = [c for c in chart_types if c]
+            trace.emit()
 
         except Exception as e:
             logger.error("[ERROR] /api/chat: %s", e, exc_info=True)
@@ -387,7 +425,12 @@ async def chat(request: ChatRequest) -> EventSourceResponse:
                 files_count=0,
                 status="error",
                 error_message=str(e),
+                user=_user_email,
             )
             yield {"event": "error", "data": json.dumps({"message": str(e)})}
+
+            # エラー時の構造化トレース（C09）
+            trace.record_error("pipeline", e)
+            trace.emit()
 
     return EventSourceResponse(event_generator())

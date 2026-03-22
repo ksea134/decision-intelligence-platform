@@ -58,6 +58,7 @@ class ADKReasoningEngine:
         company: str,
         cfg: CloudConfig,
         data_ctx: DataContext,
+        trace: Any = None,
     ) -> Generator[Any, None, None]:
         """
         ADKエージェントを実行し、chat.py互換のイベントをyieldする。
@@ -81,6 +82,7 @@ class ADKReasoningEngine:
         )
 
         # 過去事例検索（ADK実行前に必ず実行 — LLMの判断に任せない）
+        if trace: trace.begin_step("past_qa_search")
         past_qa_context = ""
         if self._search_client and self._search_client.is_ready():
             try:
@@ -91,13 +93,17 @@ class ADKReasoningEngine:
                         parts.append(f"事例{i}:\n  質問: {qa.get('question', '')}\n  回答: {qa.get('answer', '')}")
                     past_qa_context = "\n\n".join(parts)
                     flow_steps.append({"step": "過去事例検索", "done": True, "detail": f"{len(similar_qas)}件の類似事例を発見"})
+                    if trace: trace.end_step(f"{len(similar_qas)}件の類似事例")
                 else:
                     flow_steps.append({"step": "過去事例検索", "done": True, "detail": "類似事例なし"})
+                    if trace: trace.end_step("類似事例なし")
             except Exception as e:
                 logger.warning("[ADK] Past QA search failed: %s", e)
                 flow_steps.append({"step": "過去事例検索", "done": True, "detail": "検索スキップ"})
+                if trace: trace.end_step(f"エラー: {e}", status="error")
         else:
             flow_steps.append({"step": "過去事例検索", "done": True, "detail": "未接続"})
+            if trace: trace.end_step("未接続")
 
         # 企業固有コンテキストでエージェントを構築
         root_agent = build_root_agent(
@@ -111,6 +117,7 @@ class ADKReasoningEngine:
         flow_steps.append({"step": "ルートエージェント", "done": True, "detail": "質問を分析"})
 
         # ADK Runner を作成・実行
+        if trace: trace.begin_step("llm_generate")
         import asyncio
 
         runner = InMemoryRunner(agent=root_agent, app_name="dip")
@@ -196,6 +203,16 @@ class ADKReasoningEngine:
         from orchestration.adk import tools as _tools
         if _tools._last_bq_tables:
             yield {"bq_tables": list(_tools._last_bq_tables)}
+
+        # llm_generate完了
+        _selected_agent = ""
+        for fs in flow_steps:
+            if "エージェント" in fs.get("step", "") and "ルート" not in fs.get("step", ""):
+                _selected_agent = fs.get("step", "")
+                break
+        if trace: trace.end_step(f"model={MODELS.deep}, agent={_selected_agent}")
+        if trace and _selected_agent:
+            trace.set_agent(selected_agent=_selected_agent, agent_model=MODELS.deep, router_model=MODELS.router)
 
         flow_steps.append({"step": "回答生成", "done": True, "detail": MODELS.deep})
         yield {"flow_steps": list(flow_steps)}

@@ -161,6 +161,7 @@ class ReasoningEngine:
         company: str,
         cfg: CloudConfig,
         data_ctx: DataContext,
+        trace: Any = None,
     ) -> Generator[Any, None, None]:
         if not user_prompt or not str(user_prompt).strip():
             raise ValueError(f"user_prompt cannot be empty: {repr(user_prompt)}")
@@ -176,6 +177,7 @@ class ReasoningEngine:
         flow_steps.append({"step": "質問理解", "done": True, "detail": MODELS.fast})
 
         past_qa_context = ""
+        if trace: trace.begin_step("past_qa_search")
         if self._search_client and self._search_client.is_ready():
             try:
                 logger.warning("[Search] Searching past Q&A: query='%s', company='%s'", user_prompt[:50], company)
@@ -186,14 +188,18 @@ class ReasoningEngine:
                         parts.append(f"事例{i}:\n  質問: {qa.get('question', '')}\n  回答: {qa.get('answer', '')}")
                     past_qa_context = "\n\n".join(parts)
                     flow_steps.append({"step": "過去事例検索", "done": True, "detail": f"{len(similar_qas)}件の類似事例を発見"})
+                    if trace: trace.end_step(f"{len(similar_qas)}件の類似事例")
                     logger.info("[Search] %d similar Q&As found", len(similar_qas))
                 else:
                     flow_steps.append({"step": "過去事例検索", "done": True, "detail": "類似事例なし"})
+                    if trace: trace.end_step("類似事例なし")
             except Exception as e:
                 logger.warning("[Search] Failed: %s", e)
                 flow_steps.append({"step": "過去事例検索", "done": True, "detail": "検索スキップ"})
+                if trace: trace.end_step(f"エラー: {e}", status="error")
         else:
             flow_steps.append({"step": "過去事例検索", "done": True, "detail": "未接続"})
+            if trace: trace.end_step("未接続")
 
         # ── Phase 0.5: Router分類 ──
         intent = None
@@ -215,7 +221,7 @@ class ReasoningEngine:
         self._last_sql_result = None
         if data_ctx.bq_connected:
             yield {"status": "データを取得しています..."}
-            bq_data_csv = self._fetch_bq_data(user_prompt, data_ctx)
+            bq_data_csv = self._fetch_bq_data(user_prompt, data_ctx, trace=trace)
             if self._last_sql_result:
                 yield self._last_sql_result
                 flow_steps.append({"step": "データ取得", "done": True, "detail": "BigQueryからデータ取得"})
@@ -263,6 +269,7 @@ class ReasoningEngine:
 
         yield {"status": "回答を生成しています..."}
 
+        if trace: trace.begin_step("llm_generate")
         from orchestration.llm_client import generate_stream
         for chunk in generate_stream(
             model=MODELS.fast,
@@ -271,12 +278,13 @@ class ReasoningEngine:
             temperature=0.0,
         ):
             yield chunk
+        if trace: trace.end_step(f"model={MODELS.fast}")
 
         # 回答生成完了 → フロー最終状態をyield
         flow_steps[-1]["done"] = True  # 回答生成を完了に
         yield {"flow_steps": list(flow_steps)}
 
-    def _fetch_bq_data(self, user_prompt: str, data_ctx: DataContext) -> str:
+    def _fetch_bq_data(self, user_prompt: str, data_ctx: DataContext, trace: Any = None) -> str:
         """
         Phase 1: BQからデータを取得してCSVで返す。
         - テーブルが少数の場合: SELECT * で全データ取得（SQL生成不要、確実）
@@ -294,7 +302,8 @@ class ReasoningEngine:
                 logger.warning("[Phase1] テーブルが見つかりません")
                 return ""
 
-            # データカタログ経由でテーブルを絞り込み（段階1: ローカルJSON版）
+            # データカタログ経由でテーブルを絞り込み
+            if trace: trace.begin_step("table_select")
             try:
                 from orchestration.data_catalog import get_accessible_tables, select_relevant_tables
                 dataset_name = tables[0][0] if tables else ""
@@ -308,8 +317,12 @@ class ReasoningEngine:
                         logger.info("[Phase1] カタログ選択: %d テーブル → %s", len(tables), [f"{d}.{t}" for d, t in tables])
             except Exception as e:
                 logger.warning("[Phase1] カタログ選択エラー、全テーブルにフォールバック: %s", e)
+                if trace: trace.end_step(f"フォールバック: {e}", status="warn")
+            else:
+                if trace: trace.end_step(f"{len(tables)}テーブル選択")
 
             # 選択テーブルからデータを取得してCSVに結合（30秒タイムアウト）
+            if trace: trace.begin_step("bq_fetch")
             import time as _time
             _bq_start = _time.time()
             _BQ_TIMEOUT = 30
@@ -341,7 +354,11 @@ class ReasoningEngine:
 
             if not all_csv_parts:
                 logger.warning("[Phase1] データ取得できず")
+                if trace: trace.end_step("データなし")
                 return ""
+
+            total_rows = sum(1 for _ in "\n".join(all_csv_parts).split("\n"))
+            if trace: trace.end_step(f"{len(all_csv_parts)}テーブル, 約{total_rows}行")
 
             # SQL結果を保存（UIでの表示用）
             if first_result:
@@ -351,6 +368,7 @@ class ReasoningEngine:
 
         except Exception as e:
             logger.error("[Phase1] データ取得エラー: %s", e)
+            if trace: trace.end_step(f"エラー: {e}", status="error")
             return ""
 
     # ----------------------------------------------------------
