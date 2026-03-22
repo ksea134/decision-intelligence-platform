@@ -35,6 +35,7 @@ from backend.api.auth import router as auth_router
 from backend.api.models import router as models_router
 from backend.api.agents import router as agents_router
 from backend.api.feedback import router as feedback_router
+from backend.api.catalog import router as catalog_router
 
 app = FastAPI(
     title="DIP API",
@@ -62,6 +63,7 @@ app.include_router(auth_router)
 app.include_router(models_router)
 app.include_router(agents_router)
 app.include_router(feedback_router)
+app.include_router(catalog_router)
 
 # 静的ファイル配信（Next.js静的エクスポート）
 static_dir = Path(__file__).parent.parent / "static"

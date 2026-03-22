@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Company, UserInfo, ModelsResponse, AgentInfo, fetchCompanies, fetchMe, fetchModels, fetchAgents, switchModel, API_BASE, IS_LOCAL } from "@/lib/api";
+import { Company, UserInfo, ModelsResponse, AgentInfo, CatalogHealth, fetchCompanies, fetchMe, fetchModels, fetchAgents, fetchCatalogHealth, switchModel, API_BASE, IS_LOCAL } from "@/lib/api";
 
 interface SidebarProps {
   selectedCompany: Company | null;
@@ -19,12 +19,14 @@ export default function Sidebar({ selectedCompany, onSelectCompany, onGcpConfigC
   const [devOpen, setDevOpen] = useState(false);
   const [models, setModels] = useState<ModelsResponse | null>(null);
   const [agents, setAgents] = useState<AgentInfo[]>([]);
+  const [catalogHealth, setCatalogHealth] = useState<CatalogHealth | null>(null);
 
   useEffect(() => {
     fetchCompanies().then(setCompanies);
     fetchMe().then(setUser);
     fetchModels().then(setModels);
     fetchAgents().then(setAgents);
+    fetchCatalogHealth().then(setCatalogHealth);
   }, []);
 
   const handleModelSwitch = async (role: string, modelId: string) => {
@@ -54,7 +56,7 @@ export default function Sidebar({ selectedCompany, onSelectCompany, onGcpConfigC
 
       {/* サイドバー本体: 折り畳み時は完全に非表示 */}
       {!collapsed && (
-      <aside className="w-72 bg-gray-900 border-r border-gray-700 p-4 pt-12 flex flex-col h-screen">
+      <aside className="w-72 bg-gray-900 border-r border-gray-700 p-4 pt-12 flex flex-col h-screen overflow-y-auto">
 
         <h1 className="text-lg font-bold text-white mb-1">DIP</h1>
         <p className="text-xs text-gray-400 mb-4">Decision Intelligence Platform</p>
@@ -166,6 +168,20 @@ export default function Sidebar({ selectedCompany, onSelectCompany, onGcpConfigC
                         </div>
                       ))}
                     </div>
+                  </div>
+                )}
+                {/* データカタログ */}
+                {catalogHealth && (
+                  <div className="mt-2">
+                    <div className="text-xs text-gray-500 mb-1">データカタログ</div>
+                    <div className="text-xs text-gray-400">
+                      テーブル: {catalogHealth.total}件（説明あり: {catalogHealth.with_description}）
+                    </div>
+                    {catalogHealth.without_description > 0 && (
+                      <div className="text-xs text-yellow-400 mt-0.5">
+                        ⚠ 説明未設定: {catalogHealth.without_description}件
+                      </div>
+                    )}
                   </div>
                 )}
                 {/* モデル設定 */}

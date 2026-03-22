@@ -66,6 +66,18 @@ export interface AgentInfo {
   triggers: string[];
 }
 
+export interface CatalogHealth {
+  total: number;
+  with_description: number;
+  without_description: number;
+  tables: { table: string; dataset: string; has_description: boolean; description: string }[];
+}
+
+export async function fetchCatalogHealth(): Promise<CatalogHealth> {
+  const res = await fetch(`${API_BASE}/api/catalog/health`);
+  return res.json();
+}
+
 export async function fetchAgents(): Promise<AgentInfo[]> {
   const res = await fetch(`${API_BASE}/api/agents`);
   const data = await res.json();
