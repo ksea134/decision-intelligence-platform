@@ -83,7 +83,7 @@ export default function AdminQuality() {
   };
 
   const handleCsvDownload = () => {
-    const header = "時刻,企業,ユーザー,エンジン,Agent,合計(s),読込(s),検索(s),選択(s),BQ(s),生成(s),状態,質問,チャート,データソース";
+    const header = "時刻,企業,ユーザー,エンジン,Agent,合計(s),読込(s),検索(s),選択(s),BQ(s),生成(s),補足(s),状態,質問,チャート,データソース";
     const rows = traces.map((t) => {
       const ts = t._timestamp ? new Date(t._timestamp).toLocaleString("ja-JP") : "";
       const getStep = (name: string) => t.pipeline?.steps?.find((s) => s.step === name)?.seconds ?? "";
@@ -99,6 +99,7 @@ export default function AdminQuality() {
         getStep("table_select"),
         getStep("bq_fetch"),
         getStep("llm_generate"),
+        getStep("thought_process"),
         t.what?.response_status || "",
         `"${(t.what?.question || "").replace(/"/g, '""')}"`,
         (t.what?.charts || []).join(";"),
@@ -186,6 +187,7 @@ export default function AdminQuality() {
               <th className="text-right py-2 px-2">選択</th>
               <th className="text-right py-2 px-2">BQ</th>
               <th className="text-right py-2 px-2">生成</th>
+              <th className="text-right py-2 px-2">補足</th>
               <th className="text-left py-2 px-2">Agent</th>
               <th className="text-center py-2 px-2">状態</th>
             </tr>
@@ -207,6 +209,7 @@ export default function AdminQuality() {
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "table_select")}</td>
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "bq_fetch")}</td>
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "llm_generate")}</td>
+                  <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "thought_process")}</td>
                   <td className="py-2 px-2 text-gray-400">{getAgentLabel(t)}</td>
                   <td className="py-2 px-2 text-center">{isError ? "❌" : "✅"}</td>
                 </tr>

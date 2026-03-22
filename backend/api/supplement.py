@@ -57,22 +57,37 @@ def generate_supplement(request: SupplementRequest) -> dict:
 
         timestamp = time.strftime("%Y%m%d-%H%M")
 
+        from backend.ops.request_trace import RequestTrace
+        trace = RequestTrace(
+            question=request.user_prompt[:100],
+            company=request.company_display_name,
+            source="supplement",
+            engine="supplement",
+        )
+
         # 思考ロジック
+        trace.begin_step("thought_process")
         thought = engine.generate_thought_process(
             request.user_prompt,
             request.display_text,
             assets.structured_text,
             assets.unstructured_text,
         )
+        trace.end_step(f"{len(thought)}文字" if thought else "生成失敗")
 
         # インフォグラフィック
+        trace.begin_step("infographic")
         info_html, info_data = engine.generate_infographic(
             request.display_text,
             timestamp,
             request.company_display_name,
         )
+        trace.end_step("生成完了" if info_html else "生成失敗")
 
         elapsed = round(time.time() - start_ts, 1)
+        trace.response_status = "success"
+        trace.response_length = len(thought or "") + len(info_html or "")
+        trace.emit()
         logger.warning("[PERF] /api/supplement: %.1f秒", elapsed)
 
         return {
