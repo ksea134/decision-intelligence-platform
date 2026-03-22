@@ -56,6 +56,13 @@
 - V1はClaude対応済み、ADKはVertex AI待ち → V1の方が柔軟
 - **ハイブリッド構成（V1+ADK）がDIPの強み**。入力の特性に応じてエンジンを使い分けることで、速度と精度を両立
 
+### Gemini API接続方式（2026-03-23統一）
+
+ローカル・Cloud Run共通でVertex AI経由（ADC認証）を使用。Google AI Studioは廃止。
+- エンドポイント: `asia-northeast1-aiplatform.googleapis.com`
+- 認証: Application Default Credentials（`gcloud auth application-default login`）
+- 定義場所: `orchestration/llm_client.py`
+
 ### V1エンジン（`orchestration/reasoning_engine.py`）
 
 - 2フェーズ固定構造: データ取得（非ストリーミング）→ 回答生成（ストリーミング）
