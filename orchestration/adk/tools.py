@@ -29,6 +29,7 @@ _company = None
 _user_prompt = ""
 _last_search_result_count = 0
 _last_bq_tables: list[str] = []
+_last_api_calls: int = 0
 
 
 def set_tool_context(data_agent, search_client, data_ctx, company: str, user_prompt: str = "") -> None:
@@ -56,9 +57,10 @@ def query_bigquery() -> str:
     if _data_ctx is None:
         return "Error: No data context available."
 
-    global _last_bq_tables
+    global _last_bq_tables, _last_api_calls
     logger.warning("[ADK Tool] query_bigquery called: SELECT * 固定方式")
     _last_bq_tables = []
+    _last_api_calls = 0
 
     _BQ_TIMEOUT_SEC = 30  # タイムアウト（秒）
 
@@ -82,6 +84,8 @@ def query_bigquery() -> str:
                     selected_set = set(selected)
                     tables = [(d, t) for d, t in tables if f"{d}.{t}" in selected_set]
                     logger.info("[ADK Tool] カタログ選択: %d テーブル → %s", len(tables), [f"{d}.{t}" for d, t in tables])
+            from orchestration.data_catalog import last_api_call_count
+            _last_api_calls = last_api_call_count + 1  # +1 for LLM selection
         except Exception as e:
             logger.warning("[ADK Tool] カタログ選択エラー、全テーブルにフォールバック: %s", e)
 

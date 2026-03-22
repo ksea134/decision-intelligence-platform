@@ -229,7 +229,7 @@ export default function AdminQuality() {
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "llm_generate")}</td>
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "thought_process")}</td>
                   <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "infographic")}</td>
-                  <td className="py-2 px-2 text-right text-gray-500 font-mono">{t.api_calls || "-"}</td>
+                  <td className="py-2 px-2 text-right text-gray-500 font-mono">{t.api_calls !== undefined && t.api_calls !== null ? t.api_calls : "-"}</td>
                   <td className="py-2 px-2 text-center">{isError ? "❌" : "✅"}</td>
                 </tr>
               );
