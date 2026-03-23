@@ -80,3 +80,4 @@ xxhash==3.6.0
 zstandard==0.25.0
 anthropic
 google-cloud-datacatalog
+python-multipart
