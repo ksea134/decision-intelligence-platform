@@ -100,4 +100,15 @@ if static_dir.exists():
     async def index_page():
         return FileResponse(str(static_dir / "index.html"), headers=_no_cache)
 
-    app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
+    from starlette.staticfiles import StaticFiles as _StaticFiles
+    from starlette.responses import Response
+
+    class NoCacheStaticFiles(_StaticFiles):
+        """HTMLファイルにはキャッシュ無効ヘッダーを付与する。JSやCSSはNext.jsのハッシュ付きファイル名で管理されるため不要。"""
+        async def get_response(self, path: str, scope) -> Response:
+            resp = await super().get_response(path, scope)
+            if resp.media_type and "html" in resp.media_type:
+                resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            return resp
+
+    app.mount("/", NoCacheStaticFiles(directory=str(static_dir), html=True), name="static")
