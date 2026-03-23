@@ -38,6 +38,7 @@ from backend.api.feedback import router as feedback_router
 from backend.api.catalog import router as catalog_router
 from backend.api.quality import router as quality_router
 from backend.api.admin_smart_cards import router as admin_smart_cards_router
+from backend.api.admin_table_preview import router as admin_table_preview_router
 
 app = FastAPI(
     title="DIP API",
@@ -68,6 +69,7 @@ app.include_router(feedback_router)
 app.include_router(catalog_router)
 app.include_router(quality_router)
 app.include_router(admin_smart_cards_router)
+app.include_router(admin_table_preview_router)
 
 # Data Catalogキャッシュのウォームアップ（初回リクエストの遅延防止）
 @app.on_event("startup")
@@ -84,11 +86,18 @@ if static_dir.exists():
     from fastapi.responses import FileResponse
 
     # /admin → admin.html（Next.jsの静的エクスポートがadmin.htmlを生成するため）
+    # HTMLはキャッシュ無効化（JSはNext.jsがハッシュ付きファイル名で管理）
+    _no_cache = {"Cache-Control": "no-cache, no-store, must-revalidate"}
+
     @app.get("/admin")
     async def admin_page():
         admin_html = static_dir / "admin.html"
         if admin_html.exists():
-            return FileResponse(str(admin_html))
-        return FileResponse(str(static_dir / "index.html"))
+            return FileResponse(str(admin_html), headers=_no_cache)
+        return FileResponse(str(static_dir / "index.html"), headers=_no_cache)
+
+    @app.get("/")
+    async def index_page():
+        return FileResponse(str(static_dir / "index.html"), headers=_no_cache)
 
     app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
