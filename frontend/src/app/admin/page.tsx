@@ -6,11 +6,13 @@ import AdminAgents from "@/components/AdminAgents";
 import AdminFeedback from "@/components/AdminFeedback";
 import AdminQuality from "@/components/AdminQuality";
 import AdminSmartCards from "@/components/AdminSmartCards";
+import AdminTablePreview from "@/components/AdminTablePreview";
 
 const TABS = [
   { id: "quality", label: "AI品質管理", ready: true },
+  { id: "feedback", label: "利用者FB", ready: true },
   { id: "agents", label: "AIエージェント", ready: true },
-  { id: "feedback", label: "フィードバック", ready: true },
+  { id: "table_preview", label: "テーブルプレビュー", ready: true },
   { id: "catalog", label: "データカタログ", ready: true },
   { id: "smart_cards", label: "スマートカード", ready: true },
   { id: "permissions", label: "権限", ready: false },
@@ -64,16 +66,17 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* コンテンツ */}
+      {/* コンテンツ — 全タブ常駐、表示/非表示で切替（再マウント防止） */}
       <div className="px-6 py-6 max-w-6xl mx-auto">
-        {activeTab === "catalog" && <AdminCatalog />}
-        {activeTab === "agents" && <AdminAgents />}
-        {activeTab === "feedback" && <AdminFeedback />}
-        {activeTab === "quality" && <AdminQuality />}
-        {activeTab === "smart_cards" && <AdminSmartCards />}
-        {activeTab === "permissions" && (
+        <div className={activeTab === "quality" ? "" : "hidden"}><AdminQuality /></div>
+        <div className={activeTab === "feedback" ? "" : "hidden"}><AdminFeedback /></div>
+        <div className={activeTab === "agents" ? "" : "hidden"}><AdminAgents /></div>
+        <div className={activeTab === "table_preview" ? "" : "hidden"}><AdminTablePreview /></div>
+        <div className={activeTab === "catalog" ? "" : "hidden"}><AdminCatalog /></div>
+        <div className={activeTab === "smart_cards" ? "" : "hidden"}><AdminSmartCards /></div>
+        <div className={activeTab === "permissions" ? "" : "hidden"}>
           <div className="text-gray-500 text-sm">権限管理は段階4で実装予定です。</div>
-        )}
+        </div>
       </div>
     </div>
   );
