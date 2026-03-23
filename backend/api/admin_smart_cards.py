@@ -20,7 +20,7 @@ from infra.file_loader import load_smart_cards, load_companies
 router = APIRouter(tags=["admin_smart_cards"])
 
 COMPANIES_CSV = "data/companies.csv"
-CSV_HEADER = ["企業コード", "コード", "アイコン", "アイコンタイプ", "タイトル", "データソース", "表示", "エンジン"]
+CSV_HEADER = ["企業コード", "コード", "アイコン", "アイコンタイプ", "タイトル", "データソース", "表示", "エンジン", "タイミング", "取得期間", "業務ドメイン"]
 
 
 class CardData(BaseModel):
@@ -33,6 +33,9 @@ class CardData(BaseModel):
     data_source: str = "all"
     visible: bool = True
     engine: str = "v1"
+    timing: str = ""
+    period: str = ""
+    domain: str = ""
     prompt_template: str = ""
 
 
@@ -114,6 +117,9 @@ def save_smart_cards(req: SaveRequest) -> dict[str, str]:
                     card.data_source,
                     "1" if card.visible else "0",
                     card.engine,
+                    card.timing,
+                    card.period,
+                    card.domain,
                 ])
 
         # mdファイルを書き出し

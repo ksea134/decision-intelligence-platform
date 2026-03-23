@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { API_BASE } from "@/lib/api";
 
 interface SmartCardAdmin {
@@ -11,6 +11,9 @@ interface SmartCardAdmin {
   data_source: string;
   visible: boolean;
   engine: string;
+  timing: string;
+  period: string;
+  domain: string;
   prompt_template: string;
   company_code: string;
   company_name: string;
@@ -34,6 +37,10 @@ const ICON_TYPE_OPTIONS = [
   { value: "symbol", label: "Material Symbols" },
   { value: "image", label: "画像" },
 ];
+
+const TIMING_OPTIONS = ["", "随時", "日次", "週次", "月次", "四半期次"];
+const PERIOD_OPTIONS = ["", "24時間", "昨日", "7日間", "今週", "1ヶ月", "3ヶ月", "今月"];
+const DOMAIN_OPTIONS = ["", "工場", "品質", "安全", "監査", "経営", "在庫"];
 
 /** コード入力欄 — 独自stateで再描画を防ぐ */
 function CodeInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -67,6 +74,7 @@ export default function AdminSmartCards() {
   const [uploadTarget, setUploadTarget] = useState<number | null>(null);
   const [dirty, setDirty] = useState(false);
   const [initialJson, setInitialJson] = useState("");
+  const [expandedPrompt, setExpandedPrompt] = useState<number | null>(null);
 
   // ページ離脱時の確認ダイアログ
   useEffect(() => {
@@ -119,6 +127,9 @@ export default function AdminSmartCards() {
         data_source: "all",
         visible: true,
         engine: "v1",
+        timing: "",
+        period: "",
+        domain: "",
         prompt_template: "",
         company_code: companyCode,
         company_name: companyName,
@@ -163,6 +174,9 @@ export default function AdminSmartCards() {
             data_source: c.data_source,
             visible: c.visible,
             engine: c.engine,
+            timing: c.timing,
+            period: c.period,
+            domain: c.domain,
             prompt_template: c.prompt_template,
           })),
           deleted: deleted.filter((d) => d.company_code === card.company_code),
@@ -215,6 +229,9 @@ export default function AdminSmartCards() {
             data_source: c.data_source,
             visible: c.visible,
             engine: c.engine,
+            timing: c.timing,
+            period: c.period,
+            domain: c.domain,
             prompt_template: c.prompt_template,
           })),
           deleted,
@@ -332,23 +349,27 @@ export default function AdminSmartCards() {
 
       {/* テーブル */}
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-xs min-w-[1000px]">
           <thead>
             <tr className="border-b border-gray-700 text-left text-xs text-gray-400">
-              <th className="py-2 px-2 w-28">企業</th>
-              <th className="py-2 px-2 w-24">アイコン</th>
-              <th className="py-2 px-2 w-40">タイトル</th>
-              <th className="py-2 px-2 w-28">コード</th>
-              <th className="py-2 px-2 w-36">データソース</th>
-              <th className="py-2 px-2 w-20">エンジン</th>
-              <th className="py-2 px-2">プロンプト</th>
-              <th className="py-2 px-2 w-16 text-center">表示</th>
-              <th className="py-2 px-2 w-20 text-center">操作</th>
+              <th className="py-2 px-1 w-24">企業</th>
+              <th className="py-2 px-1 w-20">アイコン</th>
+              <th className="py-2 px-1 w-28">タイトル</th>
+              <th className="py-2 px-1 w-20">コード</th>
+              <th className="py-2 px-1 w-20">ソース</th>
+              <th className="py-2 px-1 w-16">エンジン</th>
+              <th className="py-2 px-1 w-16">タイミング</th>
+              <th className="py-2 px-1 w-16">期間</th>
+              <th className="py-2 px-1 w-16">ドメイン</th>
+              <th className="py-2 px-1 w-14">プロンプト</th>
+              <th className="py-2 px-1 w-10 text-center">表示</th>
+              <th className="py-2 px-1 w-12 text-center">操作</th>
             </tr>
           </thead>
           <tbody>
             {filteredCards.map((card, i) => (
-              <tr key={`${card.company_code}-${card.id}-${i}`} className="border-b border-gray-800 hover:bg-gray-900/50 align-top">
+              <React.Fragment key={`${card.company_code}-${card.id}-${i}`}>
+              <tr className="border-b border-gray-800 hover:bg-gray-900/50 align-top">
                 {/* 企業 */}
                 <td className="py-2 px-2">
                   {card._isNew ? (
@@ -377,7 +398,7 @@ export default function AdminSmartCards() {
                     <select
                       value={card.icon_type}
                       onChange={(e) => updateCard(i, "icon_type", e.target.value)}
-                      className="bg-gray-800 text-white text-[10px] rounded px-1 py-1 border border-gray-700 w-16"
+                      className="bg-gray-800 text-white text-xs rounded px-1 py-1 border border-gray-700 w-16"
                     >
                       {ICON_TYPE_OPTIONS.map((o) => (
                         <option key={o.value} value={o.value}>{o.label}</option>
@@ -399,7 +420,7 @@ export default function AdminSmartCards() {
                         type="text"
                         value={card.icon}
                         onChange={(e) => updateCard(i, "icon", e.target.value)}
-                        className="bg-gray-800 text-white text-sm rounded px-2 py-1 border border-gray-700 w-12 text-center"
+                        className="bg-gray-800 text-white text-xs rounded px-2 py-1 border border-gray-700 w-12 text-center"
                         placeholder={card.icon_type === "emoji" ? "📋" : "search"}
                       />
                     )}
@@ -460,15 +481,59 @@ export default function AdminSmartCards() {
                   </select>
                 </td>
 
-                {/* プロンプト */}
+                {/* タイミング */}
                 <td className="py-2 px-2">
-                  <textarea
-                    value={card.prompt_template}
-                    onChange={(e) => updateCard(i, "prompt_template", e.target.value)}
-                    rows={Math.max(2, Math.min(8, (card.prompt_template.match(/\n/g) || []).length + 1))}
-                    className="bg-gray-800 text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-[#FF462D] focus:outline-none w-full resize-y font-mono leading-relaxed"
-                    placeholder="プロンプトテンプレート"
-                  />
+                  <select
+                    value={card.timing}
+                    onChange={(e) => updateCard(i, "timing", e.target.value)}
+                    className="bg-gray-800 text-white text-xs rounded px-2 py-1.5 border border-gray-700 w-full"
+                  >
+                    {TIMING_OPTIONS.map((o) => (
+                      <option key={o} value={o}>{o || "—"}</option>
+                    ))}
+                  </select>
+                </td>
+
+                {/* 取得期間 */}
+                <td className="py-2 px-2">
+                  <select
+                    value={card.period}
+                    onChange={(e) => updateCard(i, "period", e.target.value)}
+                    className="bg-gray-800 text-white text-xs rounded px-2 py-1.5 border border-gray-700 w-full"
+                  >
+                    {PERIOD_OPTIONS.map((o) => (
+                      <option key={o} value={o}>{o || "—"}</option>
+                    ))}
+                  </select>
+                </td>
+
+                {/* 業務ドメイン */}
+                <td className="py-2 px-2">
+                  <select
+                    value={card.domain}
+                    onChange={(e) => updateCard(i, "domain", e.target.value)}
+                    className="bg-gray-800 text-white text-xs rounded px-2 py-1.5 border border-gray-700 w-full"
+                  >
+                    {DOMAIN_OPTIONS.map((o) => (
+                      <option key={o} value={o}>{o || "—"}</option>
+                    ))}
+                  </select>
+                </td>
+
+                {/* プロンプト */}
+                <td className="py-2 px-1 text-center">
+                  <button
+                    onClick={() => setExpandedPrompt(expandedPrompt === i ? null : i)}
+                    className={`text-xs px-3 py-1.5 rounded w-full transition-colors ${
+                      expandedPrompt === i
+                        ? "bg-[#FF462D] text-white"
+                        : card.prompt_template
+                          ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                          : "bg-gray-800 text-gray-500 hover:bg-gray-700"
+                    }`}
+                  >
+                    {expandedPrompt === i ? "閉じる" : card.prompt_template ? "編集" : "追加"}
+                  </button>
                 </td>
 
                 {/* 表示トグル */}
@@ -512,6 +577,21 @@ export default function AdminSmartCards() {
                   </div>
                 </td>
               </tr>
+              {expandedPrompt === i && (
+                <tr className="border-b border-gray-700 bg-gray-900/80">
+                  <td colSpan={12} className="py-3 px-4">
+                    <div className="text-[10px] text-gray-400 mb-1">プロンプト — {card.title}</div>
+                    <textarea
+                      value={card.prompt_template}
+                      onChange={(e) => updateCard(i, "prompt_template", e.target.value)}
+                      rows={Math.max(4, Math.min(12, (card.prompt_template.match(/\n/g) || []).length + 2))}
+                      className="bg-gray-800 text-white text-xs rounded px-3 py-2 border border-gray-700 focus:border-[#FF462D] focus:outline-none w-full resize-y font-mono leading-relaxed"
+                      placeholder="プロンプトテンプレートを入力..."
+                    />
+                  </td>
+                </tr>
+              )}
+              </React.Fragment>
             ))}
           </tbody>
         </table>

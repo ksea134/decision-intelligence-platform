@@ -149,6 +149,9 @@ def load_smart_cards(
                     "data_source": row.get("データソース", "all").strip() or "all",
                     "engine": engine,
                     "visible": visible,
+                    "timing": row.get("タイミング", "").strip(),
+                    "period": row.get("取得期間", "").strip(),
+                    "domain": row.get("業務ドメイン", "").strip(),
                 }
                 if include_prompt:
                     card["prompt_template"] = prompt_template

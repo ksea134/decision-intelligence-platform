@@ -104,6 +104,9 @@ export interface SmartCard {
   icon_type: string;
   title: string;
   data_source: string;
+  timing?: string;
+  period?: string;
+  domain?: string;
 }
 
 export interface ChatRequest {

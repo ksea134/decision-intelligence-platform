@@ -26,6 +26,9 @@ def get_smart_cards(folder_name: str = Query(..., description="企業フォル�
             "icon_type": card["icon_type"],
             "title": card["title"],
             "data_source": card["data_source"],
+            "timing": card.get("timing", ""),
+            "period": card.get("period", ""),
+            "domain": card.get("domain", ""),
         }
         for card in cards
     ]

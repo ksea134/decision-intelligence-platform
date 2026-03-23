@@ -189,29 +189,29 @@ export default function AdminQuality() {
 
       {/* ログテーブル */}
       <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+        <table className="w-full text-[11px]">
           <thead>
             <tr className="text-gray-400 border-b border-gray-700">
-              <th className="text-left py-2 px-2">時刻</th>
-              <th className="text-left py-2 px-2">種別</th>
-              <th className="text-left py-2 px-2">企業</th>
-              <th className="text-left py-2 px-2">ユーザー</th>
-              <th className="text-right py-2 px-2">合計</th>
-              <th className="text-right py-2 px-2">読込</th>
-              <th className="text-right py-2 px-2">検索</th>
-              <th className="text-right py-2 px-2">選択</th>
-              <th className="text-right py-2 px-2">BQ</th>
-              <th className="text-right py-2 px-2 min-w-[3rem]">Agt</th>
-              <th className="text-right py-2 px-2">生成</th>
-              <th className="text-right py-2 px-2">思考</th>
-              <th className="text-right py-2 px-2">図表</th>
-              <th className="text-right py-2 px-2">API</th>
-              <th className="text-right py-2 px-2">出典</th>
-              <th className="text-right py-2 px-2">回答長</th>
-              <th className="text-right py-2 px-2">参照</th>
-              <th className="text-right py-2 px-2">一貫性</th>
-              <th className="text-right py-2 px-2">総合</th>
-              <th className="text-center py-2 px-2">状態</th>
+              <th className="text-left py-1.5 px-1">時刻</th>
+              <th className="text-left py-1.5 px-1">種別</th>
+              <th className="text-left py-1.5 px-1">企業</th>
+              <th className="text-left py-1.5 px-1">ユーザー</th>
+              <th className="text-right py-1.5 px-1">合計</th>
+              <th className="text-right py-1.5 px-1 w-10">読込</th>
+              <th className="text-right py-1.5 px-1 w-10">検索</th>
+              <th className="text-right py-1.5 px-1 w-10">選択</th>
+              <th className="text-right py-1.5 px-1 w-10">BQ</th>
+              <th className="text-right py-1.5 px-1 w-10">Agt</th>
+              <th className="text-right py-1.5 px-1 w-10">生成</th>
+              <th className="text-right py-1.5 px-1 w-10">思考</th>
+              <th className="text-right py-1.5 px-1 w-10">図表</th>
+              <th className="text-right py-1.5 px-1">API</th>
+              <th className="text-right py-1.5 px-1">出典</th>
+              <th className="text-right py-1.5 px-1">回答長</th>
+              <th className="text-right py-1.5 px-1">参照</th>
+              <th className="text-right py-1.5 px-1">一貫性</th>
+              <th className="text-right py-1.5 px-1">総合</th>
+              <th className="text-center py-1.5 px-1">状態</th>
             </tr>
           </thead>
           <tbody>
@@ -222,8 +222,8 @@ export default function AdminQuality() {
               return (<React.Fragment key={i}>
                 <tr key={i} onClick={() => setExpandedTrace(expandedTrace === i ? null : i)}
                   className={`border-b border-gray-800 cursor-pointer hover:bg-gray-800/50 transition-colors ${isError ? "bg-red-900/10" : ""}`}>
-                  <td className="py-2 px-2 text-gray-500 whitespace-nowrap">{ts}</td>
-                  <td className="py-2 px-2">
+                  <td className="py-1.5 px-1 text-gray-500 whitespace-nowrap">{ts}</td>
+                  <td className="py-1.5 px-1">
                     {t.agent?.engine === "supplement"
                       ? <span className="text-[10px] text-purple-400 bg-purple-900/20 px-1.5 py-0.5 rounded">補足</span>
                       : t.agent?.engine === "v1"
@@ -233,28 +233,28 @@ export default function AdminQuality() {
                           : <span className="text-[10px] text-gray-400 bg-gray-900/20 px-1.5 py-0.5 rounded">-</span>
                     }
                   </td>
-                  <td className="py-2 px-2 text-gray-300 truncate max-w-[120px]">{t.who?.company || ""}</td>
-                  <td className="py-2 px-2 text-gray-500 truncate max-w-[100px]">{t.who?.user || ""}</td>
+                  <td className="py-1.5 px-1 text-gray-300 truncate max-w-[80px]">{t.who?.company || ""}</td>
+                  <td className="py-1.5 px-1 text-gray-500 truncate max-w-[70px]">{t.who?.user || ""}</td>
                   <td className={`py-2 px-2 text-right font-mono ${total > 30 ? "text-red-400" : total > 15 ? "text-yellow-400" : "text-blue-400"}`}>{total}s</td>
-                  <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "data_load")}</td>
-                  <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "past_qa_search")}</td>
-                  <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "table_select")}</td>
-                  <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "bq_fetch")}</td>
-                  <td className="py-2 px-2 text-gray-400 text-right">{getAgentLabel(t)}</td>
-                  <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "llm_generate")}</td>
-                  <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "thought_process")}</td>
-                  <td className="py-2 px-2 text-right text-gray-500 font-mono">{getStepTime(t, "infographic")}</td>
-                  <td className="py-2 px-2 text-right text-gray-500 font-mono">{t.api_calls !== undefined && t.api_calls !== null ? t.api_calls : "-"}</td>
-                  <td className="py-2 px-2 text-right text-gray-500 font-mono">{t.quality_scores?.citation_score ?? "-"}</td>
-                  <td className="py-2 px-2 text-right text-gray-500 font-mono">{t.quality_scores?.length_score ?? "-"}</td>
-                  <td className="py-2 px-2 text-right text-gray-500 font-mono">{t.quality_scores?.data_ref_score ?? "-"}</td>
-                  <td className="py-2 px-2 text-right text-gray-500 font-mono">{(t.quality_scores?.coherence_score ?? -1) >= 0 ? t.quality_scores?.coherence_score : "-"}</td>
+                  <td className="py-1.5 px-1 text-right text-gray-500 font-mono">{getStepTime(t, "data_load")}</td>
+                  <td className="py-1.5 px-1 text-right text-gray-500 font-mono">{getStepTime(t, "past_qa_search")}</td>
+                  <td className="py-1.5 px-1 text-right text-gray-500 font-mono">{getStepTime(t, "table_select")}</td>
+                  <td className="py-1.5 px-1 text-right text-gray-500 font-mono">{getStepTime(t, "bq_fetch")}</td>
+                  <td className="py-1.5 px-1 text-gray-400 text-right">{getAgentLabel(t)}</td>
+                  <td className="py-1.5 px-1 text-right text-gray-500 font-mono">{getStepTime(t, "llm_generate")}</td>
+                  <td className="py-1.5 px-1 text-right text-gray-500 font-mono">{getStepTime(t, "thought_process")}</td>
+                  <td className="py-1.5 px-1 text-right text-gray-500 font-mono">{getStepTime(t, "infographic")}</td>
+                  <td className="py-1.5 px-1 text-right text-gray-500 font-mono">{t.api_calls !== undefined && t.api_calls !== null ? t.api_calls : "-"}</td>
+                  <td className="py-1.5 px-1 text-right text-gray-500 font-mono">{t.quality_scores?.citation_score ?? "-"}</td>
+                  <td className="py-1.5 px-1 text-right text-gray-500 font-mono">{t.quality_scores?.length_score ?? "-"}</td>
+                  <td className="py-1.5 px-1 text-right text-gray-500 font-mono">{t.quality_scores?.data_ref_score ?? "-"}</td>
+                  <td className="py-1.5 px-1 text-right text-gray-500 font-mono">{(t.quality_scores?.coherence_score ?? -1) >= 0 ? t.quality_scores?.coherence_score : "-"}</td>
                   <td className={`py-2 px-2 text-right font-bold ${
                     (t.quality_scores?.overall_score ?? -1) >= 80 ? "text-green-400" :
                     (t.quality_scores?.overall_score ?? -1) >= 50 ? "text-yellow-400" :
                     (t.quality_scores?.overall_score ?? -1) >= 0 ? "text-red-400" : "text-gray-500"
                   }`}>{t.quality_scores?.overall_score !== undefined && t.quality_scores.overall_score >= 0 ? t.quality_scores.overall_score : "-"}</td>
-                  <td className="py-2 px-2 text-center">{isError ? "❌" : "✅"}</td>
+                  <td className="py-1.5 px-1 text-center">{isError ? "❌" : "✅"}</td>
                 </tr>
                 {expandedTrace === i && (
                   <tr>
