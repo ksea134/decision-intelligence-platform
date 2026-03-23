@@ -1,13 +1,3 @@
----
-id: PROD_SETUP_1M
-title: 段取り替え時間分析（今月）
-icon: 🔄
-category: 生産管理
-data_source: structured
-files: equipment_status.csv
-time_range: 1m
----
-
 あなたはSMED（シングル段取り）の専門家です。
 今月の段取り替え実績から改善機会を分析してください。
 

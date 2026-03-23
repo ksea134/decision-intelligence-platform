@@ -1,6 +1,6 @@
-企業コード,コード,アイコン,タイトル,データソース
-test01,recent,⚡,週間ニュース,all
-test01,notable,👁,気になる兆候,all
-test01,alert,🚨,要注意トピック,all
-test01,kpi,📊,要チェックKPI,all
-test01,hint,💡,テーマの発掘,all
+企業コード,コード,アイコン,アイコンタイプ,タイトル,データソース,表示,エンジン
+test01,recent,⚡,emoji,週間ニュース,all,1,v1
+test01,notable,👁,emoji,気になる兆候,all,1,v1
+test01,alert,🚨,emoji,要注意トピック,all,1,v1
+test01,kpi,📊,emoji,要チェックKPI,all,1,v1
+test01,hint,💡,emoji,テーマの発掘（テスト）,all,1,adk

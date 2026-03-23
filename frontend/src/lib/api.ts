@@ -101,6 +101,7 @@ export interface Company {
 export interface SmartCard {
   id: string;
   icon: string;
+  icon_type: string;
   title: string;
   data_source: string;
 }

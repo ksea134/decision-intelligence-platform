@@ -1,13 +1,3 @@
----
-id: PROD_DELAY_RISK_W
-title: 納期リスクオーダー（今週）
-icon: ⏰
-category: 生産管理
-data_source: structured
-files: production_orders.csv, production_results.csv
-time_range: 1w
----
-
 あなたは生産計画担当です。
 今週納期のオーダーについて、納期遅延リスクを評価してください。
 

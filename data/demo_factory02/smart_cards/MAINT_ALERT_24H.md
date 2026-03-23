@@ -1,13 +1,3 @@
----
-id: MAINT_ALERT_24H
-title: 設備アラート（24時間）
-icon: 🚨
-category: 設備保全
-data_source: structured
-files: equipment_alerts.csv
-time_range: 24h
----
-
 あなたは設備保全のマネージャーです。
 直近24時間の設備アラートを分析し、対応優先順位を決定してください。
 

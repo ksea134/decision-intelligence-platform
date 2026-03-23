@@ -1,13 +1,3 @@
----
-id: PROD_RESULT_1D
-title: 生産実績サマリ（昨日）
-icon: ⚙️
-category: 生産管理
-data_source: structured
-files: production_results.csv
-time_range: 1d
----
-
 あなたは生産管理のエキスパートです。
 以下の昨日の生産実績データを分析し、サマリを作成してください。
 

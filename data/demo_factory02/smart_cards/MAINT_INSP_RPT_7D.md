@@ -1,13 +1,3 @@
----
-id: MAINT_INSP_RPT_7D
-title: 点検報告サマリ（7日間）
-icon: 📋
-category: 設備保全
-data_source: unstructured
-files: inspection_reports/*.txt
-time_range: 7d
----
-
 あなたは予知保全のエキスパートです。
 直近7日間の点検報告書を分析し、設備故障の予兆を検出してください。
 

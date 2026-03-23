@@ -1,13 +1,3 @@
----
-id: QC_YIELD_OPP_1M
-title: 歩留まり改善機会（今月）
-icon: 💰
-category: 品質管理
-data_source: structured
-files: production_results.csv, defect_records.csv
-time_range: 1m
----
-
 あなたは原価管理の専門家です。
 今月の生産・不良データから歩留まり改善機会を金額ベースで分析してください。
 

@@ -5,18 +5,19 @@ import AdminCatalog from "@/components/AdminCatalog";
 import AdminAgents from "@/components/AdminAgents";
 import AdminFeedback from "@/components/AdminFeedback";
 import AdminQuality from "@/components/AdminQuality";
+import AdminSmartCards from "@/components/AdminSmartCards";
 
 const TABS = [
   { id: "quality", label: "AI品質管理", ready: true },
   { id: "agents", label: "AIエージェント", ready: true },
   { id: "feedback", label: "フィードバック", ready: true },
   { id: "catalog", label: "データカタログ", ready: true },
+  { id: "smart_cards", label: "スマートカード", ready: true },
   { id: "permissions", label: "権限", ready: false },
 ];
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("quality");
-
   useEffect(() => {
     const link = document.querySelector("link[rel='icon']") as HTMLLinkElement;
     if (link) link.href = "/favicon-admin.svg";
@@ -69,6 +70,7 @@ export default function AdminPage() {
         {activeTab === "agents" && <AdminAgents />}
         {activeTab === "feedback" && <AdminFeedback />}
         {activeTab === "quality" && <AdminQuality />}
+        {activeTab === "smart_cards" && <AdminSmartCards />}
         {activeTab === "permissions" && (
           <div className="text-gray-500 text-sm">権限管理は段階4で実装予定です。</div>
         )}

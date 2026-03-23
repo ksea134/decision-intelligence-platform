@@ -1,13 +1,3 @@
----
-id: PROD_TREND_7D
-title: 生産性トレンド（7日間）
-icon: 📈
-category: 生産管理
-data_source: structured
-files: production_results.csv
-time_range: 7d
----
-
 あなたは生産性改善のコンサルタントです。
 直近7日間の生産実績データからトレンドを分析してください。
 

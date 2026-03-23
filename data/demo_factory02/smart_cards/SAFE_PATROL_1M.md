@@ -1,13 +1,3 @@
----
-id: SAFE_PATROL_1M
-title: 安全パトロール指摘（今月）
-icon: 👷
-category: 安全・コンプライアンス
-data_source: unstructured
-files: patrol_reports/*.txt
-time_range: 1m
----
-
 あなたは安全衛生委員会のメンバーです。
 今月の安全パトロール報告書から指摘事項を集約し、是正状況を確認してください。
 

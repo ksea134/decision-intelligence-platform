@@ -1,13 +1,3 @@
----
-id: QC_DEFECT_MAP_1M
-title: 工程別不良マップ（1ヶ月）
-icon: 🗺️
-category: 品質管理
-data_source: structured
-files: defect_records.csv
-time_range: 1m
----
-
 あなたは品質エンジニアです。
 直近1ヶ月の不良データから工程別の不良マップを作成し、改善優先順位を提案してください。
 

@@ -1,13 +1,3 @@
----
-id: MAINT_RELIABILITY_1M
-title: MTBF/MTTR推移（1ヶ月）
-icon: 📊
-category: 設備保全
-data_source: structured
-files: maintenance_history.csv
-time_range: 1m
----
-
 あなたは信頼性技術者（Reliability Engineer）です。
 直近1ヶ月の故障履歴からMTBF/MTTRを算出し、設備信頼性を評価してください。
 

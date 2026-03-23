@@ -1,13 +1,3 @@
----
-id: PROD_LINE_UTIL_1M
-title: ライン別稼働率（1ヶ月）
-icon: �icing
-category: 生産管理
-data_source: structured
-files: equipment_status.csv
-time_range: 1m
----
-
 あなたは生産技術のエンジニアです。
 直近1ヶ月の設備稼働データからライン別の稼働率を分析してください。
 

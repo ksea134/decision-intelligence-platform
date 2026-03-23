@@ -84,7 +84,12 @@ def load_directory(directory_path: str, extensions: tuple[str, ...], add_filenam
         files.append(file_path.name)
     return LoadedDirectory(content="\n".join(content_parts).strip(), files=files)
 
-def load_smart_cards(smart_cards_dir: str) -> list[dict[str, Any]]:
+def load_smart_cards(
+    smart_cards_dir: str,
+    *,
+    include_prompt: bool = False,
+    include_hidden: bool = False,
+) -> list[dict[str, Any]]:
     """
     スマートカードの読み込み（CSV管理方式）。
 
@@ -92,10 +97,10 @@ def load_smart_cards(smart_cards_dir: str) -> list[dict[str, Any]]:
     同ディレクトリの {コード}.md からプロンプトを取得する。
 
     - CSVなし → 空リスト（0枚表示）
-    - 最大25枚まで（26個目以降は切り捨て）
     - mdファイルなし → prompt_template = ""（クリック時にエラー表示）
+    - include_prompt=True: prompt_templateを含める（管理画面用）
+    - include_hidden=True: 非表示カードも含める（管理画面用）
     """
-    MAX_CARDS = 25
     base = Path(smart_cards_dir)
     csv_path = base / "smart_cards.csv"
 
@@ -108,12 +113,20 @@ def load_smart_cards(smart_cards_dir: str) -> list[dict[str, Any]]:
         with csv_path.open("r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                if len(cards) >= MAX_CARDS:
-                    logger.warning("smart_cards.csv: %d枚を超えたため切り捨て", MAX_CARDS)
-                    break
                 code = row.get("コード", "").strip()
                 if not code:
                     continue
+
+                # 表示フラグ（後方互換: 列がなければデフォルト1=表示）
+                visible = row.get("表示", "1").strip() != "0"
+                if not include_hidden and not visible:
+                    continue
+
+                # アイコンタイプ（後方互換: 列がなければデフォルトemoji）
+                icon_type = row.get("アイコンタイプ", "emoji").strip() or "emoji"
+
+                # エンジン（後方互換: 列がなければデフォルトv1）
+                engine = row.get("エンジン", "v1").strip() or "v1"
 
                 # プロンプト読込（{コード}.md → {コード}.txt の順で探す）
                 prompt_template = ""
@@ -128,13 +141,18 @@ def load_smart_cards(smart_cards_dir: str) -> list[dict[str, Any]]:
                             logger.warning("smart card prompt read error (%s): %s", prompt_file, exc)
                         break
 
-                cards.append({
+                card: dict[str, Any] = {
                     "id": code,
                     "icon": row.get("アイコン", "").strip(),
+                    "icon_type": icon_type,
                     "title": row.get("タイトル", "").strip(),
-                    "prompt_template": prompt_template,
                     "data_source": row.get("データソース", "all").strip() or "all",
-                })
+                    "engine": engine,
+                    "visible": visible,
+                }
+                if include_prompt:
+                    card["prompt_template"] = prompt_template
+                cards.append(card)
     except Exception as exc:
         logger.error("smart_cards.csv read error: %s", exc)
         return []

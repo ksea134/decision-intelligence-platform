@@ -1,13 +1,3 @@
----
-id: SAFE_ENV_1D
-title: 作業環境異常値（昨日）
-icon: 🌡️
-category: 安全・コンプライアンス
-data_source: structured
-files: environment_sensors.csv
-time_range: 1d
----
-
 あなたは労働衛生管理者です。
 昨日の作業環境センサーデータを分析し、労働環境の安全性を評価してください。
 

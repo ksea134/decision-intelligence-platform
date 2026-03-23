@@ -1,13 +1,3 @@
----
-id: SAFE_INCIDENT_3M
-title: 労災・事故傾向（3ヶ月）
-icon: 🏥
-category: 安全・コンプライアンス
-data_source: structured
-files: incident_records.csv
-time_range: 3m
----
-
 あなたは労働安全コンサルタントです。
 直近3ヶ月の労災・事故データを分析し、安全対策の優先順位を提案してください。
 

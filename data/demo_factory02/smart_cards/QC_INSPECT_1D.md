@@ -1,13 +1,3 @@
----
-id: QC_INSPECT_1D
-title: 品質検査結果（昨日）
-icon: ✅
-category: 品質管理
-data_source: structured
-files: quality_inspections.csv
-time_range: 1d
----
-
 あなたは品質管理責任者（QC Manager）です。
 昨日の品質検査結果を分析し、品質状況をレポートしてください。
 

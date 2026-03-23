@@ -1,13 +1,3 @@
----
-id: QC_CLAIM_RPT_3M
-title: 顧客クレーム分析（3ヶ月）
-icon: 📨
-category: 品質管理
-data_source: unstructured
-files: customer_claims/*.txt
-time_range: 3m
----
-
 あなたは顧客品質担当（Customer Quality Engineer）です。
 直近3ヶ月の顧客クレーム報告書を分析し、品質課題を特定してください。
 

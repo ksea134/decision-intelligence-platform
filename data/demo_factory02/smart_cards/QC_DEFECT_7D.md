@@ -1,13 +1,3 @@
----
-id: QC_DEFECT_7D
-title: 不良率トレンド（7日間）
-icon: 📉
-category: 品質管理
-data_source: structured
-files: defect_records.csv
-time_range: 7d
----
-
 あなたは品質改善のスペシャリストです。
 直近7日間の不良データからトレンドと異常を分析してください。
 

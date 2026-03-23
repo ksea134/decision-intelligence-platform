@@ -1,13 +1,3 @@
----
-id: MAINT_ENERGY_1M
-title: エネルギー消費異常（今月）
-icon: ⚡
-category: 設備保全
-data_source: structured
-files: energy_consumption.csv
-time_range: 1m
----
-
 あなたはエネルギー管理士です。
 今月のエネルギー消費データから異常パターンを検出してください。
 

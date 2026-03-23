@@ -1,13 +1,3 @@
----
-id: MAINT_PM_SCHED_W
-title: 予防保全スケジュール（今週）
-icon: 📅
-category: 設備保全
-data_source: structured
-files: maintenance_schedule.csv
-time_range: 1w
----
-
 あなたは保全計画担当です。
 今週の予防保全スケジュールを確認し、実行計画を立案してください。
 

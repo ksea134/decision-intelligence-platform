@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SmartCard, fetchSmartCards } from "@/lib/api";
+import { SmartCard, fetchSmartCards, API_BASE } from "@/lib/api";
 
 interface SmartCardsProps {
   folderName: string;
@@ -34,7 +34,13 @@ export default function SmartCards({ folderName, onCardClick, visible }: SmartCa
                        hover:border-[#29707A] hover:from-gray-700 hover:to-gray-800
                        transition-all duration-200 cursor-pointer"
           >
-            <span className="text-2xl mb-1">{card.icon}</span>
+            {card.icon_type === "image" ? (
+              <img src={`${card.icon.startsWith("http") ? "" : API_BASE}${card.icon}`} alt="" className="w-8 h-8 mb-1 object-contain" />
+            ) : card.icon_type === "symbol" ? (
+              <span className="material-symbols-outlined text-2xl mb-1">{card.icon}</span>
+            ) : (
+              <span className="text-2xl mb-1">{card.icon}</span>
+            )}
             <span className="text-xs font-bold text-gray-200 leading-tight">
               {card.title}
             </span>

@@ -37,6 +37,7 @@ from backend.api.agents import router as agents_router
 from backend.api.feedback import router as feedback_router
 from backend.api.catalog import router as catalog_router
 from backend.api.quality import router as quality_router
+from backend.api.admin_smart_cards import router as admin_smart_cards_router
 
 app = FastAPI(
     title="DIP API",
@@ -66,6 +67,7 @@ app.include_router(agents_router)
 app.include_router(feedback_router)
 app.include_router(catalog_router)
 app.include_router(quality_router)
+app.include_router(admin_smart_cards_router)
 
 # Data Catalogキャッシュのウォームアップ（初回リクエストの遅延防止）
 @app.on_event("startup")

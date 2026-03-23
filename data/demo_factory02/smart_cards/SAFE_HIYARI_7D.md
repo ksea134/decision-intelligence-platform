@@ -1,13 +1,3 @@
----
-id: SAFE_HIYARI_7D
-title: ヒヤリハット報告（7日間）
-icon: ⚠️
-category: 安全・コンプライアンス
-data_source: unstructured
-files: hiyari_reports/*.txt
-time_range: 7d
----
-
 あなたは安全管理責任者（Safety Manager）です。
 直近7日間のヒヤリハット報告を分析し、重大事故の予兆を検出してください。
 

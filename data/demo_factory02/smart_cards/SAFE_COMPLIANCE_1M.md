@@ -1,13 +1,3 @@
----
-id: SAFE_COMPLIANCE_1M
-title: 法定点検・資格更新（今月）
-icon: 📜
-category: 安全・コンプライアンス
-data_source: structured
-files: certification_status.csv, maintenance_schedule.csv
-time_range: 1m
----
-
 あなたはコンプライアンス担当です。
 今月期限を迎える法定点検・資格更新を確認し、対応漏れを防止してください。
 
