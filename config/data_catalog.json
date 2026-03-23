@@ -2,7 +2,7 @@
   "_comment": "Dataplex Data Catalogのローカル版。段階2でDataplex APIに差し替え予定。",
   "tables": {
     "demo_factory02.production_results": {
-      "description": "生産実績。日別・ライン別・シフト別の計画数量・実績数量・サイクルタイム",
+      "description": "生産実績。日別・ライン別・シフト別の計画数量・実績数量・サイクルタイム。ライン名はAライン/Bライン/Cライン/Dライン",
       "tags": ["生産", "製造", "実績", "ライン", "生産性", "計画", "シフト", "サイクルタイム"],
       "quality_score": 0.95
     },
@@ -12,12 +12,12 @@
       "quality_score": 0.90
     },
     "demo_factory02.quality_inspections": {
-      "description": "品質検査結果。ライン別ロット検査、合格数・不良タイプ",
+      "description": "品質検査結果。ライン別ロット検査、合格数・不良タイプ。ライン名はAライン/Bライン/Cライン/Dライン",
       "tags": ["品質", "検査", "不良", "合格", "ロット"],
       "quality_score": 0.92
     },
     "demo_factory02.defect_records": {
-      "description": "不良記録。不良タイプ・根本原因・発生工程の詳細",
+      "description": "不良記録。不良タイプ・根本原因・発生工程の詳細。ライン名はAライン/Bライン/Cライン/Dライン",
       "tags": ["不良", "欠陥", "原因", "工程", "品質"],
       "quality_score": 0.88
     },
@@ -27,27 +27,27 @@
       "quality_score": 0.90
     },
     "demo_factory02.equipment_status": {
-      "description": "設備稼働状況。リアルタイムの稼働率・状態",
+      "description": "設備稼働状況。リアルタイムの稼働率・状態。ライン名はAライン/Bライン/Cライン/Dライン",
       "tags": ["設備", "稼働", "稼働率", "状態", "ライン"],
       "quality_score": 0.93
     },
     "demo_factory02.equipment_alerts": {
-      "description": "設備アラート。異常検知、重大度分類、アラートメッセージ",
+      "description": "設備アラート。異常検知、重大度分類、アラートメッセージ。ライン名はAライン/Bライン/Cライン/Dライン",
       "tags": ["設備", "アラート", "異常", "故障", "警告"],
       "quality_score": 0.91
     },
     "demo_factory02.maintenance_history": {
-      "description": "メンテナンス履歴。故障日・修理日・ダウンタイム・故障モード",
+      "description": "メンテナンス履歴。故障日・修理日・ダウンタイム・故障モード。ライン名はAライン/Bライン/Cライン/Dライン",
       "tags": ["メンテナンス", "修理", "故障", "ダウンタイム", "保全"],
       "quality_score": 0.89
     },
     "demo_factory02.maintenance_schedule": {
-      "description": "メンテナンス計画。予定日・種別・実施状況",
+      "description": "メンテナンス計画。予定日・種別・実施状況。ライン名はAライン/Bライン/Cライン/Dライン",
       "tags": ["メンテナンス", "計画", "予定", "保全"],
       "quality_score": 0.87
     },
     "demo_factory02.energy_consumption": {
-      "description": "エネルギー消費量。設備別の電力使用量とベースライン比較",
+      "description": "エネルギー消費量。設備別の電力使用量とベースライン比較。ライン名はAライン/Bライン/Cライン/Dライン",
       "tags": ["エネルギー", "電力", "消費", "省エネ", "コスト"],
       "quality_score": 0.94
     },

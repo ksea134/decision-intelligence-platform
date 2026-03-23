@@ -20,6 +20,16 @@ const TABS = [
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("quality");
+  const [mountedTabs, setMountedTabs] = useState<Set<string>>(new Set(["quality"]));
+
+  // 一度開いたタブを記録（以降アンマウントしない）
+  useEffect(() => {
+    setMountedTabs((prev) => {
+      if (prev.has(activeTab)) return prev;
+      return new Set(prev).add(activeTab);
+    });
+  }, [activeTab]);
+
   useEffect(() => {
     const link = document.querySelector("link[rel='icon']") as HTMLLinkElement;
     if (link) link.href = "/favicon-admin.svg";
@@ -66,17 +76,17 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* コンテンツ — 全タブ常駐、表示/非表示で切替（再マウント防止） */}
+      {/* コンテンツ — 一度開いたタブは常駐、表示/非表示で切替（遅延マウント） */}
       <div className="px-6 py-6 max-w-6xl mx-auto">
-        <div className={activeTab === "quality" ? "" : "hidden"}><AdminQuality /></div>
-        <div className={activeTab === "feedback" ? "" : "hidden"}><AdminFeedback /></div>
-        <div className={activeTab === "agents" ? "" : "hidden"}><AdminAgents /></div>
-        <div className={activeTab === "table_preview" ? "" : "hidden"}><AdminTablePreview /></div>
-        <div className={activeTab === "catalog" ? "" : "hidden"}><AdminCatalog /></div>
-        <div className={activeTab === "smart_cards" ? "" : "hidden"}><AdminSmartCards /></div>
-        <div className={activeTab === "permissions" ? "" : "hidden"}>
+        {mountedTabs.has("quality") && <div className={activeTab === "quality" ? "" : "hidden"}><AdminQuality /></div>}
+        {mountedTabs.has("feedback") && <div className={activeTab === "feedback" ? "" : "hidden"}><AdminFeedback /></div>}
+        {mountedTabs.has("agents") && <div className={activeTab === "agents" ? "" : "hidden"}><AdminAgents /></div>}
+        {mountedTabs.has("table_preview") && <div className={activeTab === "table_preview" ? "" : "hidden"}><AdminTablePreview /></div>}
+        {mountedTabs.has("catalog") && <div className={activeTab === "catalog" ? "" : "hidden"}><AdminCatalog /></div>}
+        {mountedTabs.has("smart_cards") && <div className={activeTab === "smart_cards" ? "" : "hidden"}><AdminSmartCards /></div>}
+        {mountedTabs.has("permissions") && <div className={activeTab === "permissions" ? "" : "hidden"}>
           <div className="text-gray-500 text-sm">権限管理は段階4で実装予定です。</div>
-        </div>
+        </div>}
       </div>
     </div>
   );
