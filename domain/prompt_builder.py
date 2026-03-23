@@ -78,6 +78,7 @@ def _build_persona(company: str) -> str:
     )
 
 
+
 def _build_intent_section(intent: str | None) -> str:
     if not intent or intent == "general":
         return ""
